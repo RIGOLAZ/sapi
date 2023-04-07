@@ -27,7 +27,7 @@ header .logo a h2 {
   cursor: pointer;
 }
 header .logo a h2 span {
-  color: orangered;
+  color: #00FF00;
 }
 header nav {
   width: 75%;

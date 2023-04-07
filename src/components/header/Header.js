@@ -23,7 +23,7 @@ const logo = (
   <div className={styles.logo}>
     <Link to="/">
       <h2>
-        etra<span>Shop</span>.
+        etrali<span>Shop</span>.
       </h2>
     </Link>
   </div>
@@ -161,21 +161,16 @@ const Header = () => {
                   </NavLink>
                 </ShowOnLogout>
                 <ShowOnLogin>
-                  <a href="#home" style={{ color: "#ff7722" }}>
+                  <a href="#home" style={{ color: "#00FF00"}}>
                     <FaUserCircle size={16} />
                     Hi, {displayName}
                   </a>
                 </ShowOnLogin>
-                <ShowOnLogout>
-                  <NavLink to="/register" className={activeLink}>
-                    Register
-                  </NavLink>
-                </ShowOnLogout>
-                <ShowOnLogout>
+                <ShowOnLogin>
                   <NavLink to="/order-history" className={activeLink}>
                     My Orders
                   </NavLink>
-                </ShowOnLogout>
+                </ShowOnLogin>
                 <ShowOnLogin>
                   <NavLink to="/" onClick={logoutUser}>
                     Logout
