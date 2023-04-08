@@ -1,21 +1,21 @@
 export const sliderData = [
   {
-    image: "https://i.ibb.co/CBGRLhG/bg-4.jpg",
-    heading: "Shoes Villa",
+    image: "https://res.cloudinary.com/do8lyndou/image/upload/a_180/v1659815230/photo-1635335874521-7987db781153_nuqnn5.jpg",
+    heading: "Durable electrical equipment for your installations",
     desc: "Up to 30% off on all onsale proucts.",
   },
   {
-    image: "https://i.ibb.co/cDLBk5h/bg-1.jpg",
-    heading: "Women Fashion",
+    image: "https://res.cloudinary.com/do8lyndou/image/upload/v1659901284/photo-1658298775754-5839ffd434cc_k9td2v.jpg",
+    heading: "Adequate solar panels for your use",
     desc: "Up to 30% off on all onsale proucts.",
   },
   {
-    image: "https://i.ibb.co/HXjD3V0/bg-2.jpg",
-    heading: "Men Fashion",
+    image: "https://res.cloudinary.com/do8lyndou/image/upload/v1659816117/photo-1659164839265-9bb2f08aacb1_xjvjwv.jpg",
+    heading: "Cold and air conditioning",
     desc: "Up to 30% off on all onsale proucts.",
   },
   {
-    image: "https://i.ibb.co/H2FRmtV/bg-3.jpg",
+    image: "https://res.cloudinary.com/do8lyndou/image/upload/v1670430087/Camera_d%C3%B4me_uxt5nv.png",
     heading: "Awesome Gadgets",
     desc: "Up to 30% off on all onsale proucts.",
   },
