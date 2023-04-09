@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { currency } from "../../../pages";
 import InfoBox from "../../infoBox/InfoBox";
 import styles from "./Home.module.css";
 import { AiFillDollarCircle } from "react-icons/ai";
@@ -51,7 +52,7 @@ const Home = () => {
         <InfoBox
           cardClass={`${styles.card} ${styles.card1}`}
           title={"Earnings"}
-          count={`$${totalOrderAmount}`}
+          count={`${currency} ${totalOrderAmount}`}
           icon={earningIcon}
         />
         <InfoBox

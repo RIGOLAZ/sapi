@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
+import { currency } from "../../../pages";
 import {
   ADD_TO_CART,
   CALCULATE_TOTAL_QUANTITY,
@@ -32,7 +33,7 @@ const ProductItem = ({ product, grid, id, name, price, desc, imageURL }) => {
       </Link>
       <div className={styles.content}>
         <div className={styles.details}>
-          <p>{`$${price}`}</p>
+          <p>{`${currency} ${price}`}</p>
           <h4>{shortenText(name, 18)}</h4>
         </div>
         {!grid && <p className={styles.desc}>{shortenText(desc, 200)}</p>}

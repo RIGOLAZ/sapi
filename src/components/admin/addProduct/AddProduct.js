@@ -18,7 +18,7 @@ import { selectProducts } from "../../../redux/slice/productSlice";
 const categories = [
   { id: 1, name: "Electricity" },
   { id: 2, name: "Solar" },
-  { id: 3, name: "Cold and air conditioning" },
+  { id: 3, name: "Air conditioning" },
   { id: 4, name: "Gadgets" },
 ];
 
@@ -60,7 +60,7 @@ const AddProduct = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    // console.log(file);
+    console.log(file);
 
     const storageRef = ref(storage, `eshop/${Date.now()}${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);

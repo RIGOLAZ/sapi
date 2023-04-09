@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { currency } from "../../../pages";
 import {
   FILTER_BY_BRAND,
   FILTER_BY_CATEGORY,
@@ -80,7 +81,7 @@ const ProductFilter = () => {
           })}
         </select>
         <h4>Price</h4>
-        <p>{`$${price}`}</p>
+        <p>{`${currency} ${price}`}</p>
         <div className={styles.price}>
           <input
             type="range"

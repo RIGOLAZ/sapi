@@ -1,5 +1,6 @@
 import { deleteDoc, doc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { currency } from "../../../pages";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { db, storage } from "../../../firebase/config";
@@ -126,7 +127,7 @@ const ViewProducts = () => {
                     </td>
                     <td>{name}</td>
                     <td>{category}</td>
-                    <td>{`$${price}`}</td>
+                    <td>{`${currency} ${price}`}</td>
                     <td className={styles.icons}>
                       <Link to={`/admin/add-product/${id}`}>
                         <FaEdit size={20} color="green" />
