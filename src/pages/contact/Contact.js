@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import Card from "../../components/card/Card";
 import styles from "./Contact.module.css";
-import { FaPhoneAlt, FaEnvelope, FaTwitter, FaWhatsapp, FaYoutube } from "react-icons/fa";
+import { FaPhoneAlt, FaEnvelope, FaYoutube } from "react-icons/fa";
 import { GoLocation } from "react-icons/go";
 import emailjs from "@emailjs/browser";
 import { toast } from "react-toastify";

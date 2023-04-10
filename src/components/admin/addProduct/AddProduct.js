@@ -20,6 +20,7 @@ const categories = [
   { id: 2, name: "Solar" },
   { id: 3, name: "Air conditioning" },
   { id: 4, name: "Gadgets" },
+  { id: 4, name: "Informatic" }
 ];
 
 const initialState = {

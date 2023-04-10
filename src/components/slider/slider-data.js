@@ -15,7 +15,7 @@ export const sliderData = [
     desc: "Up to 30% off on all onsale proucts.",
   },
   {
-    image: "https://res.cloudinary.com/do8lyndou/image/upload/v1670430087/Camera_d%C3%B4me_uxt5nv.png",
+    image: "https://res.cloudinary.com/do8lyndou/image/upload/v1670409962/photo-1589935447067-5531094415d1_d4r9yz.jpg",
     heading: "Awesome Gadgets",
     desc: "Up to 30% off on all onsale proucts.",
   },
