@@ -30,9 +30,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start:frontend": "react-scripts start",
-    "start:backend": "nodemon server.js",
-    "start": "node server",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -56,8 +54,8 @@
     ]
   },
   "homepage": "http://localhost:3000/",
-  "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
-  "main": "server.js",
+  "description": "This project was built by ETRALIS",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/RIGOLAZ/eshop.git"
