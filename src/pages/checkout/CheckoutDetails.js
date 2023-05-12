@@ -59,24 +59,24 @@ const CheckoutDetails = () => {
     <section>
       <div className={`container ${styles.checkout}`}>
         <h2>Checkout Details</h2>
-        <form onSubmit={handleSubmit}>
+        <form action="https://www.my-dohone.com/dohone/pay" onSubmit={handleSubmit} >
           <div>
             <Card cardClass={styles.card}>
               <h3>Shipping Address</h3>
               <label>Recipient Name</label>
               <input
                 type="text"
-                placeholder="Recipient Name"
                 required
                 name="name"
-                value={shippingAddress.name}
+                value="start"
+                readOnly
+                // value={shippingAddress.name}
                 onChange={(e) => handleShipping(e)}
               />
-              <label>Address line 1</label>
+              <label>Client name</label>
               <input
                 type="text"
-                placeholder="Address line 1"
-                required
+                placeholder="Name"
                 name="line1"
                 value={shippingAddress.line1}
                 onChange={(e) => handleShipping(e)}
@@ -116,7 +116,6 @@ const CheckoutDetails = () => {
                 value={shippingAddress.postal_code}
                 onChange={(e) => handleShipping(e)}
               />
-              {/* COUNTRY INPUT */}
               <CountryDropdown
                 className={styles.select}
                 valueType="short"
@@ -140,8 +139,7 @@ const CheckoutDetails = () => {
                 onChange={(e) => handleShipping(e)}
               />
             </Card>
-            {/* BILLING ADDRESS */}
-            <Card cardClass={styles.card}>
+            {/* <Card cardClass={styles.card}>
               <h3>Billing Address</h3>
               <label>Recipient Name</label>
               <input
@@ -196,7 +194,6 @@ const CheckoutDetails = () => {
                 value={billingAddress.postal_code}
                 onChange={(e) => handleBilling(e)}
               />
-              {/* COUNTRY INPUT */}
               <CountryDropdown
                 className={styles.select}
                 valueType="short"
@@ -222,7 +219,7 @@ const CheckoutDetails = () => {
               <button type="submit" className="--btn --btn-primary">
                 Proceed To Checkout
               </button>
-            </Card>
+            </Card> */}
           </div>
           <div>
             <Card cardClass={styles.card}>

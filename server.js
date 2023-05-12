@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 const path = require("path");
+const PORT = process.env.PORT || 4343;
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static("build"));
@@ -63,5 +64,4 @@ app.post("/create-payment-intent", async (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 4343;
 app.listen(PORT, () => console.log(`Node server listening on port ${PORT}`));
