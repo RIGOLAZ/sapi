@@ -58,7 +58,6 @@ app.post("/create-payment-intent", async (req, res) => {
     },
     // receipt_email: customerEmail
   });
-
   res.send({
     clientSecret: paymentIntent.client_secret,
   });
