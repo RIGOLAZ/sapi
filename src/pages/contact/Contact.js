@@ -72,11 +72,11 @@ const Contact = () => {
               <div className={styles.icons}>
                 <span>
                   <FaPhoneAlt />
-                  <p>+237 677077030</p>
+                  <p><a style={{color:"white"}} href="tel:237677077030">237 677077030</a></p>
                 </span>
                 <span>
                   <FaEnvelope />
-                  <p>Support@etralis.com</p>
+                  <p><a style={{color:"white"}} href="mailto: support@etralis.com">support@etralis.com</a></p>
                 </span>
                 <span>
                   <GoLocation />
