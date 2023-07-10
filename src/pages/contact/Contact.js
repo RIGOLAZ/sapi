@@ -15,14 +15,15 @@ const Contact = () => {
 
     emailjs
       .sendForm(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,
-        "template_7xyhwen",
+        "shop-etralis-ID",
+        "shop-etralis-temp",
         form.current,
-        "user_hKs2aRfLoozcqA28UpUyz"
+        "ml3KM0izA-cGdbycv"
       )
       .then(
         (result) => {
           toast.success("Message sent successfully");
+          console.log("message envoyé");
         },
         (error) => {
           toast.error(error.text);
