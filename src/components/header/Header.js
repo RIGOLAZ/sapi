@@ -112,7 +112,7 @@ const Header = () => {
   
   return (
     <>
-      <header className={scrollPage ? `${styles.fixed}` : null}>
+      <header>
         <div className={styles.header}>
           <HiOutlineMenuAlt3 className={styles["menu-icon"]} size={28} onClick={toggleMenu} />
           {logo}
@@ -120,8 +120,7 @@ const Header = () => {
           <nav
             className={
               showMenu ? `${styles["show-nav"]}` : `${styles["hide-nav"]}`
-            }
-          >
+            }>
             <div
               className={
                 showMenu
@@ -150,7 +149,7 @@ const Header = () => {
               </li>
               <li>
                 <NavLink to="/contact" className={activeLink}>
-                  Contact Us
+                  Contact
                 </NavLink>
               </li>
             </ul>
@@ -181,7 +180,6 @@ const Header = () => {
               {cart}
             </div>
           </nav>
-
           <div className={styles["menu-icon"]}>
             {cart}
           </div>

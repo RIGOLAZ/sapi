@@ -16,7 +16,7 @@
 
   --color-primary: #007bff;
   --color-success: #28a744;
-  --color-danger: orangered;
+  --color-danger: #ff9700;
 }
 
 * {
@@ -42,7 +42,7 @@ section {
 .container {
   /* max-width: 1000px; */
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 20px 20px 0 20px;
 }
 
 /* UTILITY CLASSES */
@@ -429,5 +429,5 @@ a {
 
 a:hover {
   color: var(--color-dark);
-  font-size: 1.5rem;
+  /* font-size: 1.5rem; */
 }
