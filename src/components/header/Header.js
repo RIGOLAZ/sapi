@@ -109,11 +109,12 @@ const Header = () => {
       </Link>
     </span>
   );
-
+  
   return (
     <>
       <header className={scrollPage ? `${styles.fixed}` : null}>
         <div className={styles.header}>
+          <HiOutlineMenuAlt3 className={styles["menu-icon"]} size={28} onClick={toggleMenu} />
           {logo}
 
           <nav
@@ -183,7 +184,6 @@ const Header = () => {
 
           <div className={styles["menu-icon"]}>
             {cart}
-            <HiOutlineMenuAlt3 size={28} onClick={toggleMenu} />
           </div>
         </div>
       </header>

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import Product from "../../components/product/Product";
-import Slider from "../../components/slider/Slider";
+// import Slider from "../../components/slider/Slider";
 
 const Home = () => {
   const url = window.location.href;
@@ -20,7 +20,7 @@ const Home = () => {
 
   return (
     <div>
-      <Slider />
+      {/* <Slider /> */}
       <Product />
     </div>
   );
