@@ -1,5 +1,6 @@
 .admin {
   display: flex;
+  padding-top: 6rem;
 }
 .admin .navbar {
   width: 25%;

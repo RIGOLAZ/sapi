@@ -47,7 +47,7 @@ const Login = () => {
       });
   };
 
-  // Login with Goooglr
+  // Login with Gooogle
   const provider = new GoogleAuthProvider();
   const signInWithGoogle = () => {
     signInWithPopup(auth, provider)

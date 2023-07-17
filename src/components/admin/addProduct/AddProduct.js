@@ -144,6 +144,7 @@ const AddProduct = () => {
   return (
     <>
       {isLoading && <Loader />}
+      
       <div className={styles.product}>
         <h2>{detectForm(id, "Add New Product", "Edit Product")}</h2>
         <Card cardClass={styles.card}>
