@@ -18,6 +18,7 @@ import { FaTrashAlt } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
 import { selectIsLoggedIn } from "../../redux/slice/authSlice";
+import { BiBorderTop } from "react-icons/bi";
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
@@ -64,7 +65,7 @@ const Cart = () => {
   return (
     <section>
       <div className={`container ${styles.table}`}>
-        <h2>Shopping Cart</h2>
+        <h2 style={{margin:'20px 0 0 0'}}>Shopping Cart</h2>
         {cartItems.length === 0 ? (
           <>
             <p>Your cart is currently empty.</p>
