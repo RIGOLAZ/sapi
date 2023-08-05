@@ -18,7 +18,7 @@ const Contact = () => {
         "shop-etralis-ID",
         "shop-etralis-temp",
         form.current,
-        "ml3KM0izA-cGdbycv"
+        "4rizBieDSk6pG-TEV"
       )
       .then(
         (result) => {
