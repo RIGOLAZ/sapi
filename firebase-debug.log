@@ -1,0 +1,129 @@
+[debug] [2023-08-10T09:10:49.943Z] ----------------------------------------------------------------------
+[debug] [2023-08-10T09:10:49.946Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\etralis\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2023-08-10T09:10:49.947Z] CLI Version:   12.4.7
+[debug] [2023-08-10T09:10:49.948Z] Platform:      win32
+[debug] [2023-08-10T09:10:49.948Z] Node Version:  v18.12.1
+[debug] [2023-08-10T09:10:49.951Z] Time:          Thu Aug 10 2023 10:10:49 GMT+0100 (UTC+01:00)
+[debug] [2023-08-10T09:10:49.951Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-08-10T09:10:49.964Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2023-08-10T09:10:50.329Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-08-10T09:10:50.330Z] > authorizing via signed-in user (rigolaz@gmail.com)
+[debug] [2023-08-10T09:10:50.330Z] [iam] checking project ecomm-f0ae6 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2023-08-10T09:10:50.331Z] > refreshing access token with scopes: []
+[debug] [2023-08-10T09:10:50.333Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2023-08-10T09:10:50.333Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2023-08-10T09:10:52.312Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2023-08-10T09:10:52.313Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2023-08-10T09:10:52.441Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions [none]
+[debug] [2023-08-10T09:10:52.441Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions x-goog-quota-user=projects/ecomm-f0ae6
+[debug] [2023-08-10T09:10:52.442Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2023-08-10T09:10:53.707Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions 200
+[debug] [2023-08-10T09:10:53.708Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2023-08-10T09:10:53.709Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 [none]
+[debug] [2023-08-10T09:10:54.479Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 200
+[debug] [2023-08-10T09:10:54.480Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 {"projectId":"ecomm-f0ae6","projectNumber":"120976159108","displayName":"ecomm","name":"projects/ecomm-f0ae6","resources":{"hostingSite":"ecomm-f0ae6","storageBucket":"ecomm-f0ae6.appspot.com","locationId":"us-central"},"state":"ACTIVE","etag":"1_eaae7059-21d4-407c-8461-1a96e1d72ca0"}
+[info] 
+[info] === Deploying to 'ecomm-f0ae6'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2023-08-10T09:10:54.528Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions [none]
+[debug] [2023-08-10T09:10:54.528Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2023-08-10T09:10:59.551Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions 200
+[debug] [2023-08-10T09:10:59.552Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions {"name":"projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[ecomm-f0ae6]: beginning deploy... 
+[info] i  hosting[ecomm-f0ae6]: found 19 files in build 
+[debug] [2023-08-10T09:10:59.582Z] [hosting] uploading with 200 concurrency
+[debug] [2023-08-10T09:11:01.176Z] [hosting] hash cache [YnVpbGQ] stored for 19 files
+[debug] [2023-08-10T09:11:01.177Z] [hosting][hash queue][FINAL] {"max":1550,"min":11,"avg":124.57894736842105,"active":0,"complete":19,"success":19,"errored":0,"retried":0,"total":19,"elapsed":1569}
+[debug] [2023-08-10T09:11:01.178Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles [none]
+[debug] [2023-08-10T09:11:01.178Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles {"files":{"/cart.svg":"7274eff61d86053791c9aaa72a58e19d0462df050ed409674c101283ca840c12","/favicon.ico":"07e3e6a37100d05cb2565f231642a1563925d195a1220f870438e9f59b39d467","/logo192.png":"047f44e168e47638b71d1435d620d6ab4f564e1aec8248c0fd46716fefbc8ff8","/logo512.png":"019d07c29bd3f026058a42577f236af9c88d9fc613639316ad199ce37ef0bcb0","/manifest.json":"aff3449bdc238776f5d6d967f19ec491b36aed5fb7f23ccff6500736fd58494a","/money-bill-solid.svg":"da4a41ceee726c2c0053878f9cdb5b3a9dfe13db56a8cf3cb4ddb5fd69a497f7","/robots.txt":"bfe106a3fb878dc83461c86818bf74fc1bdc7f28538ba613cd3e775516ce8b49","/asset-manifest.json":"17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489","/index.html":"5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df","/static/css/main.a9022b05.css":"e0c1f6e323e0e5d3481dfdb82cd353fb818e676a7e539c3d1fbda646f77b1b49","/static/js/main.a099e103.js.LICENSE.txt":"0621456376913bbe3c4d75d452385543574fd37f89b37fc7b5e8a890b60d838f","/static/media/Eclipse.8901fc59d676696a0e8b1963e2523bdc.svg":"376528c891f3fa2dd5e1b5a5980cfb92363cdd2f60417a76cce01ae64d24cc81","/static/css/main.a9022b05.css.map":"199fafbaaba9de230c56ce3c8da5cedd62a2c5757c32362bd23f33bbb2125439","/static/media/forgot.cfba148d722f088aeddb.png":"ec9d217133880b8d389fda0f50ddf01be711892796bab3ae69a9ff7b57e9cff6","/static/media/login.78ccab5e2cbeadd1d2f2.png":"da66b4a7849c04986cd14510a6e27d1552deaba73780bfa03bbd994caa1a884b","/static/media/register.c63eced99fcb38972a6c.png":"6fbabb44e8751324158fda9fd6a8b467f0487655074a8576db7e366ecff2cfc8","/static/media/spinner.afa973eee05e0ebff95a.jpg":"7b291f5e6ac75717fa4f8d50d6a658fc93434a8b36f3f1fa061ede4295562de6","/static/js/main.a099e103.js":"300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8","/static/js/main.a099e103.js.map":"3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f"}}
+[debug] [2023-08-10T09:11:12.600Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): FetchError: request to https://firebase-public.firebaseio.com/cli.json failed, reason: connect ETIMEDOUT 34.120.160.131:443
+[warn] !  Unable to fetch the CLI MOTD and remote config. 
+[debug] [2023-08-10T09:11:12.602Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[debug] [2023-08-10T09:11:22.231Z] *** [apiv2] error from fetch(https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles, {"headers":{},"method":"POST","body":"{\"files\":{\"/cart.svg\":\"7274eff61d86053791c9aaa72a58e19d0462df050ed409674c101283ca840c12\",\"/favicon.ico\":\"07e3e6a37100d05cb2565f231642a1563925d195a1220f870438e9f59b39d467\",\"/logo192.png\":\"047f44e168e47638b71d1435d620d6ab4f564e1aec8248c0fd46716fefbc8ff8\",\"/logo512.png\":\"019d07c29bd3f026058a42577f236af9c88d9fc613639316ad199ce37ef0bcb0\",\"/manifest.json\":\"aff3449bdc238776f5d6d967f19ec491b36aed5fb7f23ccff6500736fd58494a\",\"/money-bill-solid.svg\":\"da4a41ceee726c2c0053878f9cdb5b3a9dfe13db56a8cf3cb4ddb5fd69a497f7\",\"/robots.txt\":\"bfe106a3fb878dc83461c86818bf74fc1bdc7f28538ba613cd3e775516ce8b49\",\"/asset-manifest.json\":\"17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489\",\"/index.html\":\"5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df\",\"/static/css/main.a9022b05.css\":\"e0c1f6e323e0e5d3481dfdb82cd353fb818e676a7e539c3d1fbda646f77b1b49\",\"/static/js/main.a099e103.js.LICENSE.txt\":\"0621456376913bbe3c4d75d452385543574fd37f89b37fc7b5e8a890b60d838f\",\"/static/media/Eclipse.8901fc59d676696a0e8b1963e2523bdc.svg\":\"376528c891f3fa2dd5e1b5a5980cfb92363cdd2f60417a76cce01ae64d24cc81\",\"/static/css/main.a9022b05.css.map\":\"199fafbaaba9de230c56ce3c8da5cedd62a2c5757c32362bd23f33bbb2125439\",\"/static/media/forgot.cfba148d722f088aeddb.png\":\"ec9d217133880b8d389fda0f50ddf01be711892796bab3ae69a9ff7b57e9cff6\",\"/static/media/login.78ccab5e2cbeadd1d2f2.png\":\"da66b4a7849c04986cd14510a6e27d1552deaba73780bfa03bbd994caa1a884b\",\"/static/media/register.c63eced99fcb38972a6c.png\":\"6fbabb44e8751324158fda9fd6a8b467f0487655074a8576db7e366ecff2cfc8\",\"/static/media/spinner.afa973eee05e0ebff95a.jpg\":\"7b291f5e6ac75717fa4f8d50d6a658fc93434a8b36f3f1fa061ede4295562de6\",\"/static/js/main.a099e103.js\":\"300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8\",\"/static/js/main.a099e103.js.map\":\"3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f\"}}"}): FetchError: request to https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles failed, reason: connect ETIMEDOUT 142.250.187.234:443
+[debug] [2023-08-10T09:11:22.635Z] [populateQueue] Retrying task index 0
+[debug] [2023-08-10T09:11:22.637Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles [none]
+[debug] [2023-08-10T09:11:22.637Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles {"files":{"/cart.svg":"7274eff61d86053791c9aaa72a58e19d0462df050ed409674c101283ca840c12","/favicon.ico":"07e3e6a37100d05cb2565f231642a1563925d195a1220f870438e9f59b39d467","/logo192.png":"047f44e168e47638b71d1435d620d6ab4f564e1aec8248c0fd46716fefbc8ff8","/logo512.png":"019d07c29bd3f026058a42577f236af9c88d9fc613639316ad199ce37ef0bcb0","/manifest.json":"aff3449bdc238776f5d6d967f19ec491b36aed5fb7f23ccff6500736fd58494a","/money-bill-solid.svg":"da4a41ceee726c2c0053878f9cdb5b3a9dfe13db56a8cf3cb4ddb5fd69a497f7","/robots.txt":"bfe106a3fb878dc83461c86818bf74fc1bdc7f28538ba613cd3e775516ce8b49","/asset-manifest.json":"17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489","/index.html":"5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df","/static/css/main.a9022b05.css":"e0c1f6e323e0e5d3481dfdb82cd353fb818e676a7e539c3d1fbda646f77b1b49","/static/js/main.a099e103.js.LICENSE.txt":"0621456376913bbe3c4d75d452385543574fd37f89b37fc7b5e8a890b60d838f","/static/media/Eclipse.8901fc59d676696a0e8b1963e2523bdc.svg":"376528c891f3fa2dd5e1b5a5980cfb92363cdd2f60417a76cce01ae64d24cc81","/static/css/main.a9022b05.css.map":"199fafbaaba9de230c56ce3c8da5cedd62a2c5757c32362bd23f33bbb2125439","/static/media/forgot.cfba148d722f088aeddb.png":"ec9d217133880b8d389fda0f50ddf01be711892796bab3ae69a9ff7b57e9cff6","/static/media/login.78ccab5e2cbeadd1d2f2.png":"da66b4a7849c04986cd14510a6e27d1552deaba73780bfa03bbd994caa1a884b","/static/media/register.c63eced99fcb38972a6c.png":"6fbabb44e8751324158fda9fd6a8b467f0487655074a8576db7e366ecff2cfc8","/static/media/spinner.afa973eee05e0ebff95a.jpg":"7b291f5e6ac75717fa4f8d50d6a658fc93434a8b36f3f1fa061ede4295562de6","/static/js/main.a099e103.js":"300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8","/static/js/main.a099e103.js.map":"3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f"}}
+[debug] [2023-08-10T09:11:24.561Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles 200
+[debug] [2023-08-10T09:11:24.562Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362:populateFiles {"uploadRequiredHashes":["17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489","3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f","5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df","300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files"}
+[debug] [2023-08-10T09:11:24.564Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489 [none]
+[debug] [2023-08-10T09:11:24.564Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489 [stream]
+[debug] [2023-08-10T09:11:24.566Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f [none]
+[debug] [2023-08-10T09:11:24.566Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f [stream]
+[debug] [2023-08-10T09:11:24.568Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df [none]
+[debug] [2023-08-10T09:11:24.568Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df [stream]
+[debug] [2023-08-10T09:11:24.571Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8 [none]
+[debug] [2023-08-10T09:11:24.571Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8 [stream]
+[debug] [2023-08-10T09:11:24.573Z] [hosting][populate queue][FINAL] {"max":1927,"min":1927,"avg":1927,"active":0,"complete":1,"success":1,"errored":0,"retried":1,"total":1,"elapsed":23400}
+[debug] [2023-08-10T09:11:24.573Z] [hosting] uploads queued: 4
+[debug] [2023-08-10T09:11:27.284Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df 200
+[debug] [2023-08-10T09:11:27.285Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/5427a8f02295f9c207013c1344dee119972f6b6a082bd0ade01cf5ceb34f12df [stream]
+[debug] [2023-08-10T09:11:27.699Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8 200
+[debug] [2023-08-10T09:11:27.700Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/300d9c1608466a32e0672d309422a09ae8cb1695f1104aa7046658f8c455d5d8 [stream]
+[debug] [2023-08-10T09:11:31.156Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489 200
+[debug] [2023-08-10T09:11:31.156Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/17d1f475df18c02dae76d8032659838fe12efc0d225446139222ec8e0bb1f489 [stream]
+[debug] [2023-08-10T09:11:35.145Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f 200
+[debug] [2023-08-10T09:11:35.145Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/ecomm-f0ae6/versions/b06a4247b5942362/files/3489437407255d3e5049cc69caa9bb55a3e4fd358cc09760c52116125beb1b7f [stream]
+[debug] [2023-08-10T09:11:35.145Z] [hosting][upload queue][FINAL] {"max":10582,"min":2722,"avg":5758.75,"active":0,"complete":4,"success":4,"errored":0,"retried":0,"total":4,"elapsed":10583}
+[info] +  hosting[ecomm-f0ae6]: file upload complete 
+[debug] [2023-08-10T09:11:35.147Z] [hosting] deploy completed after 35592ms
+[debug] [2023-08-10T09:11:35.148Z] [
+  {
+    "config": {
+      "public": "build",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "site": "ecomm-f0ae6"
+    },
+    "version": "projects/120976159108/sites/ecomm-f0ae6/versions/b06a4247b5942362"
+  }
+]
+[info] i  hosting[ecomm-f0ae6]: finalizing version... 
+[debug] [2023-08-10T09:11:35.152Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions/b06a4247b5942362 updateMask=status%2Cconfig
+[debug] [2023-08-10T09:11:35.152Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions/b06a4247b5942362 {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2023-08-10T09:11:56.220Z] *** [apiv2] error from fetch(https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions/b06a4247b5942362?updateMask=status%2Cconfig, {"headers":{},"method":"PATCH","body":"{\"status\":\"FINALIZED\",\"config\":{\"rewrites\":[{\"glob\":\"**\",\"path\":\"/index.html\"}]}}"}): FetchError: request to https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/ecomm-f0ae6/versions/b06a4247b5942362?updateMask=status%2Cconfig failed, reason: connect ETIMEDOUT 142.250.187.234:443
+[debug] [2023-08-10T09:12:01.244Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\etralis\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:254:49)
+    at listOnTimeout (node:internal/timers:564:17)
+    at process.processTimers (node:internal/timers:507:7)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2023-08-10T09:12:13.193Z] ----------------------------------------------------------------------
+[debug] [2023-08-10T09:12:13.197Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\etralis\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2023-08-10T09:12:13.198Z] CLI Version:   12.4.7
+[debug] [2023-08-10T09:12:13.198Z] Platform:      win32
+[debug] [2023-08-10T09:12:13.199Z] Node Version:  v18.12.1
+[debug] [2023-08-10T09:12:13.202Z] Time:          Thu Aug 10 2023 10:12:13 GMT+0100 (UTC+01:00)
+[debug] [2023-08-10T09:12:13.202Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-08-10T09:12:13.208Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2023-08-10T09:12:13.446Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-08-10T09:12:13.447Z] > authorizing via signed-in user (rigolaz@gmail.com)
+[debug] [2023-08-10T09:12:13.447Z] [iam] checking project ecomm-f0ae6 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2023-08-10T09:12:13.449Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions [none]
+[debug] [2023-08-10T09:12:13.450Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions x-goog-quota-user=projects/ecomm-f0ae6
+[debug] [2023-08-10T09:12:13.450Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2023-08-10T09:12:14.266Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions 200
+[debug] [2023-08-10T09:12:14.267Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ecomm-f0ae6:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2023-08-10T09:12:14.269Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 [none]
+[debug] [2023-08-10T09:12:34.527Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): FetchError: request to https://firebase-public.firebaseio.com/cli.json failed, reason: connect ETIMEDOUT 34.120.160.131:443
+[warn] !  Unable to fetch the CLI MOTD and remote config. 
+[debug] [2023-08-10T09:12:34.537Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[debug] [2023-08-10T09:12:35.318Z] *** [apiv2] error from fetch(https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6, {"headers":{},"method":"GET","signal":{}}): FetchError: request to https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 failed, reason: connect ETIMEDOUT 216.58.204.74:443
+[debug] [2023-08-10T09:12:35.319Z] Failed to make request to https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 (original: request to https://firebase.googleapis.com/v1beta1/projects/ecomm-f0ae6 failed, reason: connect ETIMEDOUT 216.58.204.74:443)
+[debug] [2023-08-10T09:12:40.331Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\etralis\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:254:49)
+    at listOnTimeout (node:internal/timers:564:17)
+    at process.processTimers (node:internal/timers:507:7)
+[error] 
+[error] Error: An unexpected error has occurred.
