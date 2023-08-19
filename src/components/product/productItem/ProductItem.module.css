@@ -1,8 +1,8 @@
 .grid {
-  width: 24rem;
+  width: 14rem;
   background-color: #fff;
   margin: 5px;
-  height: 36rem;
+  height: 28rem;
   position: relative;
 }
 .grid .img {

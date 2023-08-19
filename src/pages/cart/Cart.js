@@ -154,12 +154,7 @@ const Cart = () => {
                     <h3>{`${currency} ${cartTotalAmount}`}</h3>
                   </div>
                   <p>Tax an shipping calculated at checkout</p>
-                  <button
-                    className="--btn --btn-primary --btn-block"
-                    onClick={checkout}
-                  >
-                    Checkout
-                  </button>
+                  <button className="--btn --btn-primary --btn-block" onClick={checkout}>Checkout</button>
                 </Card>
               </div>
             </div>

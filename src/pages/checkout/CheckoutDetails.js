@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { CountryDropdown } from "react-country-region-selector";
+import { auth } from "../../firebase/config";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  REMOVE_ACTIVE_USER,
+  SET_ACTIVE_USER,
+} from "../../redux/slice/authSlice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
@@ -17,9 +22,102 @@ const initialAddressState = {
   city: "",
   state: "",
   postal_code: "",
-  country: "",
   phone: "",
 };
+
+/*
+<input type="hidden" name="cmd" value="start">
+<input type="hidden" name="rN" value="Jack Laprune">
+<input type="hidden" name="rT" value="6xxxxxxxx">
+<input type="hidden" name="rH" value="XXXXXXXXX">
+<input type="hidden" name="rI" value="XXXX">
+<input type="hidden" name="rMt" value="500">
+<input type="hidden" name="rDvs" value="XAF">
+<input type="hidden" name="source" value="my Shop Name">
+<input type="hidden" name="endPage" value="http://www.votre-site.com/success.php">
+<input type="hidden" name="notifyPage" value="http://www.votre-site.com">
+<input type="hidden" name="cancelPage" value="http://www.votre-site.com">
+<input type="submit" value="Valider"> */
+
+/* cmd
+
+Valeur = « start »
+Cette Valeur est à ne pas changer et elle est
+Obligatoire
+
+rN nom de votre client qui effectue le paiement. c'est facultatif.
+
+rT Numéro Téléphone du client qui effectue le paiement (Obligatoire)
+
+rE Adresse email du client qui effectue le paiement. c'est facultatif.
+
+rH Votre Code-marchand qui est disponible dans la page
+« profil » de votre compte DOHONE (Obligatoire) ou
+que vous avez reçu par mail.
+
+rI Le numéro de votre commande. Si votre système ne
+gère pas de numéro de commande, vous pouvez enlever ce champs. c'est facultatif.
+
+rMt
+
+Montant TOTAL des achats (Obligatoire). C‟est le
+montant qui devra être payé par votre client. Par
+défaut la dévise de ce montant est l'euro, Sauf si vous
+
+précisez une autre devise sous le paramètre 'rDvs' ci-
+après.
+
+rDvs
+
+La devise correspondante au montant que vous avez
+donné. Ce paramètre est facultatif. Dans le cas où vous
+ne précisez pas ce paramètre, la devise est EUR. Vous
+avez le choix entre 3 devises uniquement : EUR, XAF,
+USD
+
+rOnly
+
+Ceci est optionnel. Si vous souhaitez que votre API
+n‟affiche que certains opérateurs, vous pouvez préciser
+ces opérateurs ici. 1=MTN, 2=Orange, 3=Express
+Union, 10=Dohone-Account, 5=VISA/MASTERCARD,
+17=YUP, 18=Yoomee, 20=Gimacpay (BANK-FASTER).
+Vous pouvez préciser plusieurs, séparés par la virgule.
+Exemple : « 1, 2, 3, 17 »
+Dans le cas où vous choisissez juste un seul opérateur,
+
+le téléphone de paiement du client deviendra non-
+modifiable et sera obligatoirement le téléphone fourni
+
+sous le paramètre « rT ».
+rLocale le choix de la langue. « fr » ou « en »
+source Le nom commercial de votre site (Obligatoire)
+endPage Adresse de redirection en cas de SUCCESS de paiement (Obligatoire)
+
+notifyPage Adresse de notification automatique de votre site en cas de succès de paiement (facultatif)
+cancelPage Adresse de redirection en cas d‟Annulation de
+paiement par le client (Obligatoire)
+
+logo une adresse url menant au logo de votre site si vous
+voulez voir apparaitre ce logo pendant le paiement
+(Facultatif)
+
+motif le motif est facultatif. S‟il est précisé, il sera inscrit dans
+votre historique DOHONE (version excel). Ceci peut
+être important pour votre comptabilité.
+
+numberNotifs Nombre de fois/tentatives de notification de votre
+serveur par DOHONE, vers votre notifyPage. Default =
+1. Max = 5.
+DOHONE notifiera votre serveur ce nombre de fois,
+pour chaque transaction. Ce paramètre est facultatif.
+
+rUserId Dans des environnements critiques de sécurité des
+payeurs contre la Web-Criminalité, ou dans des
+environnements où vous contactez continuellement
+DOHONE via la même session http (pour tout client
+confondu), Ce paramètre permet à DOHONE de mieux
+gérer vos clients. Vous y fournissez l‟identifiant du compte de votre client dans votre système. Ce paramètre est facultatif.*/
 
 const CheckoutDetails = () => {
   const [shippingAddress, setShippingAddress] = useState({
@@ -62,164 +160,31 @@ const CheckoutDetails = () => {
         <form action="https://www.my-dohone.com/dohone/pay" onSubmit={handleSubmit} >
           <div>
             <Card cardClass={styles.card}>
-              <h3>Shipping Address</h3>
-              <label>Recipient Name</label>
+              {/* <h3>Coordonnes</h3> */}
+              {/* <label>Recipient Name</label>
               <input
                 type="text"
                 required
                 name="name"
                 value="start"
                 readOnly
-                // value={shippingAddress.name}
                 onChange={(e) => handleShipping(e)}
-              />
-              <label>Client name</label>
-              <input
-                type="text"
-                placeholder="Name"
-                name="line1"
-                value={shippingAddress.line1}
-                onChange={(e) => handleShipping(e)}
-              />
-              <label>Address line 2</label>
-              <input
-                type="text"
-                placeholder="Address line 2"
-                name="line2"
-                value={shippingAddress.line2}
-                onChange={(e) => handleShipping(e)}
-              />
-              <label>City</label>
-              <input
-                type="text"
-                placeholder="City"
-                required
-                name="city"
-                value={shippingAddress.city}
-                onChange={(e) => handleShipping(e)}
-              />
-              <label>State</label>
-              <input
-                type="text"
-                placeholder="State"
-                required
-                name="state"
-                value={shippingAddress.state}
-                onChange={(e) => handleShipping(e)}
-              />
-              <label>Postal code</label>
-              <input
-                type="text"
-                placeholder="Postal code"
-                required
-                name="postal_code"
-                value={shippingAddress.postal_code}
-                onChange={(e) => handleShipping(e)}
-              />
-              <CountryDropdown
-                className={styles.select}
-                valueType="short"
-                value={shippingAddress.country}
-                onChange={(val) =>
-                  handleShipping({
-                    target: {
-                      name: "country",
-                      value: val,
-                    },
-                  })
-                }
-              />
-              <label>Phone</label>
-              <input
-                type="text"
-                placeholder="Phone"
-                required
-                name="phone"
-                value={shippingAddress.phone}
-                onChange={(e) => handleShipping(e)}
-              />
-            </Card>
-            {/* <Card cardClass={styles.card}>
-              <h3>Billing Address</h3>
-              <label>Recipient Name</label>
-              <input
-                type="text"
-                placeholder="Name"
-                required
-                name="name"
-                value={billingAddress.name}
-                onChange={(e) => handleBilling(e)}
-              />
-              <label>Address line 1</label>
-              <input
-                type="text"
-                placeholder="Address line 1"
-                required
-                name="line1"
-                value={billingAddress.line1}
-                onChange={(e) => handleBilling(e)}
-              />
-              <label>Address line 2</label>
-              <input
-                type="text"
-                placeholder="Address line 2"
-                name="line2"
-                value={billingAddress.line2}
-                onChange={(e) => handleBilling(e)}
-              />
-              <label>City</label>
-              <input
-                type="text"
-                placeholder="City"
-                required
-                name="city"
-                value={billingAddress.city}
-                onChange={(e) => handleBilling(e)}
-              />
-              <label>State</label>
-              <input
-                type="text"
-                placeholder="State"
-                required
-                name="state"
-                value={billingAddress.state}
-                onChange={(e) => handleBilling(e)}
-              />
-              <label>Postal code</label>
-              <input
-                type="text"
-                placeholder="Postal code"
-                required
-                name="postal_code"
-                value={billingAddress.postal_code}
-                onChange={(e) => handleBilling(e)}
-              />
-              <CountryDropdown
-                className={styles.select}
-                valueType="short"
-                value={billingAddress.country}
-                onChange={(val) =>
-                  handleBilling({
-                    target: {
-                      name: "country",
-                      value: val,
-                    },
-                  })
-                }
-              />
-              <label>Phone</label>
-              <input
-                type="text"
-                placeholder="Phone"
-                required
-                name="phone"
-                value={billingAddress.phone}
-                onChange={(e) => handleBilling(e)}
-              />
-              <button type="submit" className="--btn --btn-primary">
+              /> */}
+              <input type="hidden" name="cmd" value="start"/>
+              <input type="hidden" name="rN" value=""/>
+              <input type="hidden" name="rT" value="6xxxxxxxx"/>
+              <input type="hidden" name="rH" value="XXXXXXXXX"/>
+              <input type="hidden" name="rI" value="XXXX"/>
+              <input type="hidden" name="rMt" value="500"/>
+              <input type="hidden" name="rDvs" value="XAF"/>
+              <input type="hidden" name="source" value="Etralishop"/>
+              <input type="hidden" name="endPage" value="http://www.votre-site.com/success.php"/>
+              <input type="hidden" name="notifyPage" value="http://www.votre-site.com"/>
+              <input type="hidden" name="cancelPage" value="http://www.votre-site.com"/>
+              <button type="submit" value="valider" className="--btn --btn-primary">
                 Proceed To Checkout
               </button>
-            </Card> */}
+              </Card>
           </div>
           <div>
             <Card cardClass={styles.card}>
