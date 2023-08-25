@@ -17,6 +17,9 @@
   --color-primary: #007bff;
   --color-success: #28a744;
   --color-danger: #ff9700;
+
+  --mainColor5:#FA6052;
+  --mainColor6:#00EB00;
 }
 
 * {
@@ -608,6 +611,58 @@ a:hover {
 .svgimg .lamp-light {
   fill: #EFEFEF;
 }
+
+/* load */
+.--load {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  transform: translate(-50%, -50%);
+  width: 35px;
+  height: 35px;
+  margin: 20vh auto;
+}
+.--load hr {
+  border: 0;
+  margin: 0;
+  width: 40%;
+  height: 40%;
+  position: absolute;
+  border-radius: 50%;
+  animation: spin 2s ease infinite
+}
+.--load :first-child {
+  background: #19A68C;
+  animation-delay: -1.5s
+}
+.--load :nth-child(2) {
+  background: var(--mainColor5);
+  animation-delay: -1s
+}
+.--load :nth-child(3) {
+  background: #FDA543;
+  animation-delay: -0.5s
+}
+.--load :last-child {
+  background: var(--mainColor6)
+}
+@keyframes spin {
+  0%,100% {
+      transform: translate(0)
+  }
+  25% {
+      transform: translate(160%)
+  }
+  50% {
+      transform: translate(160%, 160%)
+  }
+  75% {
+      transform: translate(0, 160%)
+  }
+}
+
+/* load */
 
 @keyframes glow {
   0% {

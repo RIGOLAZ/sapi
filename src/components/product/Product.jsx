@@ -9,7 +9,7 @@ import {
 import styles from "./Product.module.css";
 import ProductFilter from "./productFilter/ProductFilter";
 import ProductList from "./productList/ProductList";
-import spinnerImg from "../../assets/spinner.jpg";
+// import spinnerImg from "../../assets/spinner.jpg";
 import { FaCogs } from "react-icons/fa";
 
 const Product = () => {
@@ -45,12 +45,13 @@ const Product = () => {
         </aside>
         <div className={styles.content}>
           {isLoading ? (
-            <img
-              src={spinnerImg}
-              alt="Loading.."
-              style={{ width: "50px" }}
-              className="--center-all"
-            />
+            
+            <div className="--center-all --load">
+            <hr />
+            <hr />
+            <hr />
+            <hr />
+           </div>
           ) : (
             <ProductList products={products} />
           )}
