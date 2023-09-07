@@ -64,11 +64,11 @@ const Login = () => {
     <>
       {isLoading && <Loader />}
       <section className={`container ${styles.auth}`}>
-        <div className={styles.img}>
-          <img src={loginImg} alt="Login" width="400" />
-        </div>
-
         <Card>
+          <div class="background">
+            {/* <div class="shape"></div>
+            <div class="shape"></div> */}
+        </div>
           <div className={styles.form}>
             <h2>Login</h2>
 
@@ -97,7 +97,7 @@ const Login = () => {
             </form>
             <button className="--btn-2 --btn-block" id="google-connect" onClick={signInWithGoogle}><span>Login with Google</span></button>
             <span className={styles.register}>
-              <p>Don't have an account?</p>
+              <p>Don't have an account? |</p>
               <Link to="/register">Register</Link>
             </span>
           </div>

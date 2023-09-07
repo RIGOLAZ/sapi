@@ -42,6 +42,10 @@ const Register = () => {
       {isLoading && <Loader />}
       <section className={`container ${styles.auth}`}>
         <Card>
+        <div class="background">
+            {/* <div class="shape"></div>
+            <div class="shape"></div> */}
+        </div>
           <div className={styles.form}>
             <h2>Register</h2>
             <form onSubmit={registerUser}>
@@ -72,7 +76,7 @@ const Register = () => {
             </form>
 
             <span className={styles.register}>
-              <p>Already an account?</p>
+              <p>Already an account? |</p>
               <Link to="/login">Login</Link>
             </span>
           </div>
