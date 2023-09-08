@@ -42,8 +42,6 @@ const Register = () => {
       <section className={`container ${styles.auth}`}>
         <Card>
         <div class="background">
-            {/* <div class="shape"></div>
-            <div class="shape"></div> */}
         </div>
           <div className={styles.form}>
             <h2>Register</h2>
