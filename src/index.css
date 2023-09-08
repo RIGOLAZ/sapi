@@ -517,40 +517,18 @@ a:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(#0C0E10, #446182);
   background: #080710;
 }
-/* .background .shape{
+.background .shape{
   height: 200px;
   width: 200px;
   position: absolute;
-  border-radius: 50%;
 }
-.shape:first-child{
-  background: linear-gradient(
-      #1845ad,
-      #23a2f6
-  );
-  left: -80px;
-  top: -80px;
-}
-.shape:last-child{
-  background: linear-gradient(
-      to right,
-      #ff512f,
-      #f09819
-  );
-  right: -30px;
-  bottom: -80px;
-}
-.background .ground {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 25vh;
-  background: #0C0E10;
+/* .shape:first-child{
+  background: url('./pages/auth/Stamp-ETRALIS.png') no-repeat;
+  left: 50%;
+  top: 80px;
 } */
-
 .notFound {
   font-family: "Fira Sans", sans-serif;
   color:#f5f6fa;

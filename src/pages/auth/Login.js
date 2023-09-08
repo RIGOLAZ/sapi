@@ -1,5 +1,6 @@
 import { useState } from "react";
 import styles from "./auth.module.css";
+import loginImg from "../../assets/login.png";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
 import {
@@ -65,8 +66,7 @@ const Login = () => {
       <section className={`container ${styles.auth}`}>
         <Card>
           <div class="background">
-            {/* <div class="shape"></div>
-            <div class="shape"></div> */}
+            <div class="shape"></div>
         </div>
           <div className={styles.form}>
             <h2>Login</h2>
