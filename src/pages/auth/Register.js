@@ -1,6 +1,5 @@
 import { useState } from "react";
 import styles from "./auth.module.css";
-import registerImg from "../../assets/register.png";
 import Card from "../../components/card/Card";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -81,9 +80,6 @@ const Register = () => {
             </span>
           </div>
         </Card>
-        <div className={styles.img}>
-          <img src={registerImg} alt="Register" width="400" />
-        </div>
       </section>
     </>
   );
