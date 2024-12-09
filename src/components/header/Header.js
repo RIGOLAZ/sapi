@@ -26,6 +26,10 @@ const logo = (
         etrali<span>Shop</span>.
       </h2>
     </Link>
+    <div className={styles.piblock}>
+      <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1733736990/Pi-button_dbwp3k.svg"} alt="pilogo"/>
+      <h6>Available soon </h6>
+    </div>
   </div>
 );
 

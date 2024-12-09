@@ -53,10 +53,10 @@ const Reset = () => {
               </button>
               <div className={styles.links}>
                 <p>
-                  <Link to="/login">- Login</Link>
+                  <Link to="/login">- Login -</Link>
                 </p>
                 <p>
-                  <Link to="/register">- Register</Link>
+                  <Link to="/register">- Register -</Link>
                 </p>
               </div>
             </form>

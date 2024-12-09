@@ -32,7 +32,7 @@
   .product-list .top {
     flex-direction: column;
     align-items: start;
-    padding-bottom: 5px;
+    padding: 10px 0 5px 0;
   }
   .product-list .search {
     width: 100%;

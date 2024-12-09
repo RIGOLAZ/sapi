@@ -18,6 +18,19 @@ header .header {
   align-items: center;
   position: relative;
 }
+header .logo{
+  display: flex;
+  justify-content: space-between;
+}
+
+.piblock{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+.pilo{
+  margin:0 10px 0 10px;
+}
 
 header .logo a h2 {
   width: 25%;
