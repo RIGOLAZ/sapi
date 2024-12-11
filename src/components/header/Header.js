@@ -18,6 +18,7 @@ import {
   CALCULATE_TOTAL_QUANTITY,
   selectCartTotalQuantity,
 } from "../../redux/slice/cartSlice";
+import piLogo from "../header/pi-network.svg"
 
 const logo = (
   <div className={styles.logo}>
@@ -27,8 +28,9 @@ const logo = (
       </h2>
     </Link>
     <div className={styles.piblock}>
-      <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1733736990/Pi-button_dbwp3k.svg"} alt="pilogo"/>
-      <h6>Available soon </h6>
+      {/* <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1733736990/Pi-button_dbwp3k.svg"} alt="pilogo"/> */}
+      <img className={styles.pilo} src={piLogo} alt="pilogo"/>
+      <h6>Available soon</h6>
     </div>
   </div>
 );

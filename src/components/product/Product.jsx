@@ -9,7 +9,6 @@ import {
 import styles from "./Product.module.css";
 import ProductFilter from "./productFilter/ProductFilter";
 import ProductList from "./productList/ProductList";
-// import spinnerImg from "../../assets/spinner.jpg";
 import { FaCogs } from "react-icons/fa";
 
 const Product = () => {

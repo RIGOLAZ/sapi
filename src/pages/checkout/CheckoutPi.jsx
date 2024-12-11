@@ -18,7 +18,7 @@ import CheckoutForm from "../../components/checkoutForm/CheckoutForm";
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PK);
 
-const Checkout = () => {
+const CheckoutPi = () => {
   const [message, setMessage] = useState("Initializing checkout...");
   const [clientSecret, setClientSecret] = useState("");
 
@@ -62,8 +62,8 @@ const Checkout = () => {
       })
       .catch((error) => {
         //setMessage("Failed to initialize checkout");
-        setMessage("Failed to initialize checkout");
-        toast.error("Something went wrong!!!");
+        setMessage("Pi Mainnet is not available yet!");
+        toast.error("Mainnet not available!!!");
       });
   }, []);
 
@@ -89,4 +89,4 @@ const Checkout = () => {
   );
 };
 
-export default Checkout;
+export default CheckoutPi;

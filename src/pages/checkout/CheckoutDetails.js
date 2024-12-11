@@ -14,6 +14,7 @@ import {
   SAVE_SHIPPING_ADDRESS,
 } from "../../redux/slice/checkoutSlice";
 import styles from "./CheckoutDetails.module.css";
+import piLogo from "./pi-network.svg"
 
 const initialAddressState = {
   name: "",
@@ -152,6 +153,13 @@ const CheckoutDetails = () => {
     dispatch(SAVE_BILLING_ADDRESS(billingAddress));
     navigate("/checkout");
   };
+  const handleSubmitPi = (e) => {
+    e.preventDefault();
+    dispatch(SAVE_SHIPPING_ADDRESS(shippingAddress));
+    dispatch(SAVE_BILLING_ADDRESS(billingAddress));
+    navigate("/checkoutPi");
+  };
+
 
   return (
     <section>
@@ -192,6 +200,28 @@ const CheckoutDetails = () => {
             </Card>
           </div>
         </form>
+        <br/>
+        {/*pi network form*/}
+        <form action="*" onSubmit={handleSubmitPi} >
+          <div>
+              <input type="hidden" name="cmd" value="start"/>
+              <input type="hidden" name="rN" value=""/>
+              <input type="hidden" name="rT" value="6xxxxxxxx"/>
+              <input type="hidden" name="rH" value="XXXXXXXXX"/>
+              <input type="hidden" name="rI" value="XXXX"/>
+              <input type="hidden" name="rMt" value="500"/>
+              <input type="hidden" name="rDvs" value="XAF"/>
+              <input type="hidden" name="source" value="Etralishop"/>
+              <input type="hidden" name="endPage" value="http://www.votre-site.com/success.php"/>
+              <input type="hidden" name="notifyPage" value="http://www.votre-site.com"/>
+              <input type="hidden" name="cancelPage" value="http://www.votre-site.com"/>
+              <button type="submit" value="valider" className="--btn --pibtn">
+                {/* Pi MAINNET Checkout <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1733736990/Pi-button_dbwp3k.svg"} alt="pilogo"/> */}
+                Pi MAINNET Checkout <img className={styles.pilo} src={piLogo} alt="pilogo"/>
+              </button>
+          </div>
+        </form>
+        {/*Pi Network form End*/}
       </div>
     </section>
   );

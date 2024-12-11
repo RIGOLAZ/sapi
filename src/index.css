@@ -287,6 +287,10 @@ p {
   transition: all 0.3s;
 }
 
+.--pibtn{
+  background: #e200f7c5;
+}
+
 .--btn:hover {
   transform: translateY(-2px);
 }

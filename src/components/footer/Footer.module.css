@@ -10,3 +10,12 @@
 .footer p {
   color: #fff;
 }
+.piblock{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 13px;
+}
+.pilo{
+  margin: 5px 10px;
+}
