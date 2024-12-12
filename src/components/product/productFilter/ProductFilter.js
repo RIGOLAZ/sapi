@@ -97,7 +97,7 @@ const ProductFilter = () => {
           Clear Filter
         </button>
         <br/>
-        <p className="note">The products will be officially sold when the Pi network mainnet opens And then we will deliver the product to you in many countries around the world. GCV <b>$314159</b>. <br/>  To get into the Pi project, just click here, download and enter <b><u>ETRALIS</u></b> as sponsorship code<br/></p>
+        <p>The products will be officially sold when the Pi network mainnet opens And then we will deliver the product to you in many countries around the world. GCV <b>$314159</b>. <br/>  To get into the Pi project, just click here, download and enter <b><u>ETRALIS</u></b> as sponsorship code<br/></p>
         <Link to={"https://play.google.com/store/apps/details?id=com.blockchainvault"}><img src="https://res.cloudinary.com/do8lyndou/image/upload/v1734027116/Button-lat%C3%A9ral-Pi_qefe7m.svg" alt="Pi"/></Link>
       </div>
     </div>
