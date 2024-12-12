@@ -5,4 +5,4 @@ export { default as Register } from "./auth/Register";
 export { default as Reset } from "./auth/Reset";
 export { default as Admin } from "./admin/Admin";
 
-export const currency = "CFA";
+export const currency = "Pi";

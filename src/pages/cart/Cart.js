@@ -18,7 +18,7 @@ import { FaTrashAlt } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
 import { selectIsLoggedIn } from "../../redux/slice/authSlice";
-import { BiBorderTop } from "react-icons/bi";
+// import { BiBorderTop } from "react-icons/bi";
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
