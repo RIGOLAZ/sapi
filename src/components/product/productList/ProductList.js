@@ -11,6 +11,7 @@ import {
   SORT_PRODUCTS,
 } from "../../../redux/slice/filterSlice";
 import Pagination from "../../pagination/Pagination";
+import { Link } from "react-router-dom";
 
 const ProductList = ({ products }) => {
   const [grid, setGrid] = useState(true);
@@ -41,37 +42,42 @@ const ProductList = ({ products }) => {
 
   return (
     <div className={styles["product-list"]} id="product">
-      <div className={styles.top}>
-        <div className={styles.icons}>
-          <BsFillGridFill
-            size={22}
-            color="orangered"
-            onClick={() => setGrid(true)}
-          />
+      <div className={styles.topgun}>
+        <div className={styles.top}>
+          <div className={styles.icons}>
+            <BsFillGridFill
+              size={22}
+              color="green"
+              onClick={() => setGrid(true)}
+            />
 
-          <FaListAlt size={24} color="#0066d4" onClick={() => setGrid(false)} />
+            <FaListAlt size={24} color="#0066d4" onClick={() => setGrid(false)} />
 
-          <p>
-            <b>{filteredProducts.length}</b> Products found.
-          </p>
+            <p>
+              <b>{filteredProducts.length}</b> Products found.
+            </p>
+          </div>
+          {/* Search Icon */}
+          <div>
+            <Search value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          {/* Sort Products */}
+          <div className={styles.sort}>
+            <label>Sort by:</label>
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="latest">Latest</option>
+              <option value="lowest-price">Lowest Price</option>
+              <option value="highest-price">Highest Price</option>
+              <option value="a-z">A - Z</option>
+              <option value="z-a">Z - A</option>
+            </select>
+          </div>
         </div>
-        {/* Search Icon */}
-        <div>
-          <Search value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        {/* Sort Products */}
-        <div className={styles.sort}>
-          <label>Sort by:</label>
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="latest">Latest</option>
-            <option value="lowest-price">Lowest Price</option>
-            <option value="highest-price">Highest Price</option>
-            <option value="a-z">A - Z</option>
-            <option value="z-a">Z - A</option>
-          </select>
-        </div>
+          <div className={styles.piblock}>
+            <p>To get into the Pi project, just click bellow, download and enter <b><u>ETRALIS</u></b> as invitation code.<br/></p>
+                    <Link to={"https://play.google.com/store/apps/details?id=com.blockchainvault"}><img src="https://res.cloudinary.com/do8lyndou/image/upload/v1734023109/StorePi_mjubzf.svg" alt="pilogo" target="_blank" /></Link>
+          </div>
       </div>
-
       <div className={grid ? `${styles.grid}` : `${styles.list}`}>
         {products.lenght === 0 ? (
           <p>No product found.</p>

@@ -76,6 +76,11 @@ const Cart = () => {
           </>
         ) : (
           <>
+          <br/>
+            <div>
+              <Link to="/#products">&larr; Continue shopping</Link>
+            </div>
+            <br/>
             <table>
               <thead>
                 <tr>

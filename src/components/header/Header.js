@@ -38,7 +38,7 @@ const activeLink = ({ isActive }) => (isActive ? `${styles.active}` : "");
 const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [displayName, setdisplayName] = useState("");
-  const [scrollPage, setScrollPage] = useState(false);
+  // const [scrollPage, setScrollPage] = useState(false);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
 
   useEffect(() => {
@@ -49,14 +49,14 @@ const Header = () => {
 
   const dispatch = useDispatch();
 
-  const fixNavbar = () => {
-    if (window.scrollY > 50) {
-      setScrollPage(true);
-    } else {
-      setScrollPage(false);
-    }
-  };
-  window.addEventListener("scroll", fixNavbar);
+  // const fixNavbar = () => {
+  //   if (window.scrollY > 50) {
+  //     setScrollPage(true);
+  //   } else {
+  //     setScrollPage(false);
+  //   }
+  // };
+  // window.addEventListener("scroll", fixNavbar);
 
   // Monitor currently sign in user
   useEffect(() => {

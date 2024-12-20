@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Loader from "../../components/loader/Loader";
 import useFetchCollection from "../../customHooks/useFetchCollection";
 import { selectUserID } from "../../redux/slice/authSlice";
@@ -28,6 +28,11 @@ const OrderHistory = () => {
   return (
     <section>
       <div className={`container ${styles.order}`}>
+      <br />
+        <div>
+          <Link to="/#products">&larr; Continue shopping</Link>
+        </div>
+        <br />
         <h2>Your Order History</h2>
         <p>
           Open an order to leave a <b>Product Review</b>
