@@ -1,73 +1,170 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-const {onRequest} = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
-
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-exports.helloWorld = onRequest((request, response) => {
-  logger.info("Hello logs!", {structuredData: true});
-  response.send("Hello from Firebase!");
-});
 const functions = require("firebase-functions");
-const pi = require("pi-backend");
+const admin = require("firebase-admin");
+const axios = require("axios");
 
-// Configurez Pi Network avec vos clés d'API
-pi.configure({apiKey: "VOTRE_CLE_API", secretKey: "VOTRE_SECRET_KEY"});
+admin.initializeApp();
 
-// Fonction pour créer un paiement
-exports.createPayment = functions.https.onRequest(async (req, res) => {
-// Autorisez les requêtes cross-origin (CORS)
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "POST");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
+const PI_API_KEY = functions.config().pi.api_key;
+// const PI_SECRET = functions.config().pi.secret;
+// const PI_SANDBOX = functions.config().pi.sandbox === "true";
 
-  // Répondez aux requêtes OPTIONS (nécessaire pour CORS)
-  if (req.method === "OPTIONS") {
-    res.end();
-    return;
-  }
-
-  const {amount, memo, userUid} = req.body;
-
+exports.verifyPiPayment = functions.https.onCall(async (data, context) => {
   try {
-    const payment = await pi.createPayment({
-      amount: amount,
-      memo: memo,
-      userUid: userUid,
-    });
-    res.json({success: true, paymentId: payment.identifier});
+    const { paymentId, items, customerEmail } = data;
+
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated"
+      );
+    }
+
+    const response = await axios.get(
+      `https://api.minepi.com/v2/payments/${paymentId}`,
+      {
+        headers: {
+          Authorization: `Key ${PI_API_KEY}`,
+        },
+      }
+    );
+
+    const payment = response.data;
+
+    if (payment.status !== "completed") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Payment not completed"
+      );
+    }
+
+    const orderRef = await admin
+      .firestore()
+      .collection("orders")
+      .add({
+        userId: context.auth.uid,
+        customerEmail,
+        items,
+        amount: payment.amount,
+        currency: payment.currency,
+        transactionId: payment.transaction.txid,
+        paymentId,
+        status: "completed",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(context.auth.uid)
+      .collection("orders")
+      .doc(orderRef.id)
+      .set({
+        orderId: orderRef.id,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(context.auth.uid)
+      .update({
+        cart: [],
+      });
+
+    return {
+      success: true,
+      orderId: orderRef.id,
+      transactionId: payment.transaction.txid,
+    };
   } catch (error) {
-    res.status(500).json({success: false, error: error.message});
+    console.error("Pi payment verification error:", error);
+    throw new functions.https.HttpsError("internal", error.message);
   }
 });
 
-// Fonction pour confirmer un paiement
-exports.confirmPayment = functions.https.onRequest(async (req, res) => {
-// Autorisez les requêtes cross-origin (CORS)
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "POST");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-
-  // Répondez aux requêtes OPTIONS (nécessaire pour CORS)
-  if (req.method === "OPTIONS") {
-    res.end();
-    return;
-  }
-
-  const {paymentId} = req.body;
+exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => {
   try {
-    const confirmation = await pi.confirmPayment(paymentId);
-    res.json({success: true, confirmation});
+    const { items, customerEmail } = data;
+
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated"
+      );
+    }
+
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.price * item.cartQuantity,
+      0
+    );
+
+    const response = await axios.post(
+      "https://api.minepi.com/v2/payments",
+      {
+        amount: totalAmount,
+        memo: `Etralishop purchase - ${customerEmail}`,
+        metadata: {
+          products: items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.cartQuantity,
+            price: item.price,
+          })),
+        },
+      },
+      {
+        headers: {
+          Authorization: `Key ${PI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    await admin.firestore().collection("paymentIntents").add({
+      userId: context.auth.uid,
+      paymentId: response.data.identifier,
+      amount: totalAmount,
+      items,
+      status: "pending",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return {
+      paymentId: response.data.identifier,
+      amount: response.data.amount,
+    };
   } catch (error) {
-    res.status(500).json({success: false, error: error.message});
+    console.error("Pi payment intent error:", error);
+    throw new functions.https.HttpsError("internal", error.message);
+  }
+});
+
+exports.piWebhook = functions.https.onRequest(async (req, res) => {
+  try {
+    const { payment } = req.body;
+
+    if (payment.status === "completed") {
+      const querySnapshot = await admin
+        .firestore()
+        .collection("paymentIntents")
+        .where("paymentId", "==", payment.identifier)
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        await doc.ref.update({
+          status: "completed",
+          transactionId: payment.transaction.txid,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Webhook error:", error);
+    res.status(500).send("Error");
   }
 });

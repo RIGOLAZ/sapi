@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { currency } from "..";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from 'react-toastify';
 import {
   ADD_TO_CART,
   CALCULATE_SUBTOTAL,
@@ -18,6 +19,7 @@ import { FaTrashAlt } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
 import { selectIsLoggedIn } from "../../redux/slice/authSlice";
+import PiPaymentButton from "../../components/piPayment/PiPaymentButton";
 // import { BiBorderTop } from "react-icons/bi";
 
 const Cart = () => {
@@ -52,6 +54,14 @@ const Cart = () => {
   }, [cartItems, dispatch]);
 
   const url = window.location.href;
+
+  const handlePiPaymentSuccess = (result) => {
+    toast.success(`Payment successful! Transaction ID: ${result.transactionId}`);
+  };
+
+  const handlePiPaymentError = (error) => {
+    toast.error(`Payment failed: ${error}`);
+  };
 
   const checkout = () => {
     if (isLoggedIn) {
@@ -160,6 +170,14 @@ const Cart = () => {
                   </div>
                   <p>Tax an shipping calculated at checkout</p>
                   <button className="--btn --btn-primary --btn-block" onClick={checkout}>Checkout</button>
+                  <div className={styles.piSection}>
+                      <hr />
+                      <p style={{ textAlign: 'center', margin: '10px 0' }}>or</p>
+                      <PiPaymentButton 
+                        onPaymentSuccess={handlePiPaymentSuccess}
+                        onPaymentError={handlePiPaymentError}
+                      />
+                    </div>
                 </Card>
               </div>
             </div>
