@@ -169,15 +169,15 @@ const Cart = () => {
                     <h3>{`${currency} ${cartTotalAmount}`}</h3>
                   </div>
                   <p>Tax an shipping calculated at checkout</p>
-                  <button className="--btn --btn-primary --btn-block" onClick={checkout}>Checkout</button>
-                  <div className={styles.piSection}>
-                      <hr />
-                      <p style={{ textAlign: 'center', margin: '10px 0' }}>or</p>
+                  {/*  <button className="--btn --btn-primary --btn-block" onClick={checkout}>Checkout</button> */}
+                  {/* <div className={styles.piSection}> */}
+                      {/* <hr /> */}
+                      {/* <p style={{ textAlign: 'center', margin: '10px 0' }}>or</p> */}
                       <PiPaymentButton 
                         onPaymentSuccess={handlePiPaymentSuccess}
                         onPaymentError={handlePiPaymentError}
                       />
-                    </div>
+                    {/* </div> */}
                 </Card>
               </div>
             </div>

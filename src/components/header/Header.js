@@ -30,7 +30,7 @@ const logo = (
       <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1734023109/StorePi_mjubzf.svg"} alt="pilogo"/>
       <h6>Available soon</h6>
     </div>
-    <img className={styles.xmas} src="https://res.cloudinary.com/do8lyndou/image/upload/v1735091749/Chapeau-N%C3%B6el_vbieyp.png" alt="hat" />
+    {/* <img className={styles.xmas} src="https://res.cloudinary.com/do8lyndou/image/upload/v1735091749/Chapeau-N%C3%B6el_vbieyp.png" alt="hat" /> */}
   </div>
 );
 
@@ -39,7 +39,6 @@ const activeLink = ({ isActive }) => (isActive ? `${styles.active}` : "");
 const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [displayName, setdisplayName] = useState("");
-  // const [scrollPage, setScrollPage] = useState(false);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
 
   useEffect(() => {

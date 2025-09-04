@@ -98,7 +98,7 @@ const ProductFilter = () => {
         </button>
         <br/>
         <p>The products will be officially sold when the Pi network mainnet opens And then we will deliver the product to you in many countries around the world. GCV <b>$314,159</b>. <br/>  To get into the Pi project, just click here, download and enter <b><u>ETRALIS</u></b> as invitation code<br/></p>
-        <Link to={"https://play.google.com/store/apps/details?id=com.blockchainvault"}><img src="https://res.cloudinary.com/do8lyndou/image/upload/v1734027116/Button-lat%C3%A9ral-Pi_qefe7m.svg" alt="Pi"/></Link>
+        <Link to={"https://play.google.com/store/apps/details?id=com.blockchainvault"} target="_blank"><img src="https://res.cloudinary.com/do8lyndou/image/upload/v1734027116/Button-lat%C3%A9ral-Pi_qefe7m.svg" alt="Pi"/></Link>
       </div>
     </div>
   );
