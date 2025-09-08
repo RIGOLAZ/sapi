@@ -1,12 +1,12 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 const axios = require("axios");
 
 admin.initializeApp();
 
-const PI_API_KEY = functions.config().pi.api_key;
-// const PI_SECRET = functions.config().pi.secret;
-// const PI_SANDBOX = functions.config().pi.sandbox === "true";
+const PI_API_KEY = process.env.PI_API_KEY;
+const PI_SECRET = process.env.PI_SECRET;
+const PI_SANDBOX = process.env.PI_SANDBOX === 'true';
 
 exports.verifyPiPayment = functions.https.onCall(async (data, context) => {
   try {

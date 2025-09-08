@@ -23,6 +23,7 @@ const PiPaymentButton = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  
   const createPiPaymentIntent = httpsCallable(functions, 'createPiPaymentIntent');
   const verifyPiPayment = httpsCallable(functions, 'verifyPiPayment');
 
@@ -37,7 +38,7 @@ const PiPaymentButton = () => {
     try {
       await window.Pi.init({ 
         version: "2.0",
-        sandbox: process.env.REACT_APP_PI_SANDBOX === "true"
+        sandbox: process.env.REACT_APP_PI_SANDBOX === "true" || false
       });
     } catch (error) {
       console.error("Pi initialization failed", error);

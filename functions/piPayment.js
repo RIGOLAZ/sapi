@@ -5,113 +5,134 @@ const axios = require('axios');
 const PI_API_KEY = functions.config().pi_network.api_key;
 const PI_NETWORK_URL = 'https://api.minepi.com/v2';
 
-// Cloud Function pour approbation
-exports.approvePiPayment = functions.https.onCall(async (data, context) => {
-  try {
-    const { paymentId } = data;
-    
-    // Vérifier l'authentification (optionnel mais recommandé)
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Utilisateur non authentifié');
-    }
-    
-    // Récupérer les détails du paiement
-    const paymentDetails = await axios.get(
-      `${PI_NETWORK_URL}/payments/${paymentId}`,
-      {
-        headers: {
-          'Authorization': `Key ${PI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    const payment = paymentDetails.data;
-    
-    // Vérifier le statut
-    if (payment.status !== 'pending') {
-      throw new functions.https.HttpsError('failed-precondition', 'Statut de paiement invalide');
-    }
-    
-    // Approuver le paiement
-    await axios.post(
-      `${PI_NETWORK_URL}/payments/${paymentId}/approve`,
-      {},
-      {
-        headers: {
-          'Authorization': `Key ${PI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    return { success: true, message: 'Paiement approuvé' };
-    
-  } catch (error) {
-    console.error('Erreur approbation:', error);
-    throw new functions.https.HttpsError('internal', 'Erreur lors de l\'approbation');
-  }
-});
+// exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => {
+//   try {
+//     const { items, customerEmail } = data;
 
-// Cloud Function pour completion
-exports.completePiPayment = functions.https.onCall(async (data, context) => {
-  try {
-    const { paymentId, txid } = data;
-    
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Utilisateur non authentifié');
-    }
-    
-    // Compléter le paiement
-    await axios.post(
-      `${PI_NETWORK_URL}/payments/${paymentId}/complete`,
-      { txid },
-      {
-        headers: {
-          'Authorization': `Key ${PI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    // Ici, vous pouvez sauvegarder la commande dans Firestore
-    const orderData = {
-      userId: context.auth.uid,
-      paymentId: paymentId,
-      txid: txid,
-      status: 'completed',
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
-    };
-    
-    await admin.firestore().collection('orders').add(orderData);
-    
-    return { success: true, orderId: orderRef.id };
-    
-  } catch (error) {
-    console.error('Erreur completion:', error);
-    throw new functions.https.HttpsError('internal', 'Erreur lors de la completion');
-  }
-});
+//     if (!context.auth) {
+//       throw new functions.https.HttpsError(
+//         "unauthenticated",
+//         "User must be authenticated"
+//       );
+//     }
 
-// Cloud Function pour vérifier le solde
-exports.getPiBalance = functions.https.onCall(async (data, context) => {
-  try {
-    const { userUid } = data;
-    
-    const balance = await axios.get(
-      `${PI_NETWORK_URL}/me/balance`,
-      {
-        headers: {
-          'Authorization': `Key ${PI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    return { balance: balance.data };
-    
-  } catch (error) {
-    console.error('Erreur balance:', error);
-    throw new functions.https.HttpsError('internal', 'Erreur lors de la récupération du solde');
-  }
-});
+//     const totalAmount = items.reduce(
+//       (sum, item) => sum + item.price * item.cartQuantity,
+//       0
+//     );
+
+//     const response = await axios.post(
+//       "https://api.minepi.com/v2/payments",
+//       {
+//         amount: totalAmount,
+//         memo: `Etralishop purchase - ${customerEmail}`,
+//         metadata: {
+//           products: items.map((item) => ({
+//             id: item.id,
+//             name: item.name,
+//             quantity: item.cartQuantity,
+//             price: item.price,
+//           })),
+//         },
+//       },
+//       {
+//         headers: {
+//           Authorization: `Key ${PI_API_KEY}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     await admin.firestore().collection("paymentIntents").add({
+//       userId: context.auth.uid,
+//       paymentId: response.data.identifier,
+//       amount: totalAmount,
+//       items,
+//       status: "pending",
+//       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//     });
+
+//     return {
+//       paymentId: response.data.identifier,
+//       amount: response.data.amount,
+//     };
+//   } catch (error) {
+//     console.error("Pi payment intent error:", error);
+//     throw new functions.https.HttpsError("internal", error.message);
+//   }
+// });
+
+// exports.verifyPiPayment = functions.https.onCall(async (data, context) => {
+//   try {
+//     const { paymentId, items, customerEmail } = data;
+
+//     if (!context.auth) {
+//       throw new functions.https.HttpsError(
+//         "unauthenticated",
+//         "User must be authenticated"
+//       );
+//     }
+
+//     const response = await axios.get(
+//       `https://api.minepi.com/v2/payments/${paymentId}`,
+//       {
+//         headers: {
+//           Authorization: `Key ${PI_API_KEY}`,
+//         },
+//       }
+//     );
+
+//     const payment = response.data;
+
+//     if (payment.status !== "completed") {
+//       throw new functions.https.HttpsError(
+//         "failed-precondition",
+//         "Payment not completed"
+//       );
+//     }
+
+//     const orderRef = await admin
+//       .firestore()
+//       .collection("orders")
+//       .add({
+//         userId: context.auth.uid,
+//         customerEmail,
+//         items,
+//         amount: payment.amount,
+//         currency: payment.currency,
+//         transactionId: payment.transaction.txid,
+//         paymentId,
+//         status: "completed",
+//         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+//       });
+
+//     await admin
+//       .firestore()
+//       .collection("users")
+//       .doc(context.auth.uid)
+//       .collection("orders")
+//       .doc(orderRef.id)
+//       .set({
+//         orderId: orderRef.id,
+//         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//       });
+
+//     await admin
+//       .firestore()
+//       .collection("users")
+//       .doc(context.auth.uid)
+//       .update({
+//         cart: [],
+//       });
+
+//     return {
+//       success: true,
+//       orderId: orderRef.id,
+//       transactionId: payment.transaction.txid,
+//     };
+//   } catch (error) {
+//     console.error("Pi payment verification error:", error);
+//     throw new functions.https.HttpsError("internal", error.message);
+//   }
+// });
