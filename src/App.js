@@ -21,6 +21,10 @@ function App() {
         <ToastContainer />
         <Header />
         <Routes>
+          <Route path="/validation-key.txt" element={() => {
+            window.location.href = "/validation-key.txt";
+            return null;
+          }} />
           <Route path="/" element={<Home />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />

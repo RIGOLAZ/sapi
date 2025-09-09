@@ -21,11 +21,30 @@
     ],
     "rewrites": [
       {
+        "source": "/validation-key.txt",
+        "destination": "/validation-key.txt"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
   },
+  "headers": [
+      {
+        "source": "validation-key.txt",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain; charset=utf-8"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ],
   "emulators": {
     "functions": {
       "port": 3000
