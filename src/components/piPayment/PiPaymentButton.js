@@ -15,7 +15,8 @@ import styles from './PiPaymentButton.module.css';
 const PiPaymentButton = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPiAvailable, setIsPiAvailable] = useState(false);
-  
+  const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, loading, pending, completed, failed
+
   const cartItems = useSelector(selectCartItems);
   const totalAmount = useSelector(selectCartTotalAmount);
   const customerEmail = useSelector(selectEmail);
@@ -45,8 +46,6 @@ const PiPaymentButton = () => {
       toast.error("Pi Network initialization failed");
     }
   };
-
-  const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, loading, pending, completed, failed
   
   const handlePiPayment = async () => {
   if (!window.Pi) {
@@ -61,6 +60,7 @@ const PiPaymentButton = () => {
   }
 
   setIsLoading(true);
+  setPaymentStatus('loading');
 
   try {
     // Étape 1: Créer l'intention de paiement côté serveur
@@ -92,6 +92,7 @@ const PiPaymentButton = () => {
 
     // Étape 4: Vérifier le paiement après approbation
     if (payment.status === 'completed') {
+      setPaymentStatus('completed');
       const verificationResult = await verifyPiPayment({
         paymentId: payment.identifier,
         txid: payment.transaction?.txid,
@@ -112,6 +113,7 @@ const PiPaymentButton = () => {
     }
 
   } catch (error) {
+    setPaymentStatus('failed');
     console.error('Pi payment error:', error);
     
     // Gestion spécifique des erreurs
@@ -139,19 +141,43 @@ const PiPaymentButton = () => {
     );
   }
 
+  const getButtonText = () => {
+    switch (paymentStatus) {
+      case 'loading':
+        return 'Processing Pi Payment...';
+      case 'pending':
+        return 'Check your Pi wallet';
+      case 'completed':
+        return 'Payment completed!';
+      case 'failed':
+        return 'Payment failed - Try again';
+      default:
+        return `Pay ${totalAmount} Pi`;
+    }
+  };
+
+  if (!isPiAvailable) {
+    return (
+      <div className={styles.piUnavailable}>
+        <p>Pi Network wallet not detected.</p>
+        <small>Please use Pi Browser or install Pi Network app</small>
+      </div>
+    );
+  }
+
   return (
-    <button 
+   <button
       className={`--btn --pibtn ${styles.piButton}`}
       onClick={handlePiPayment}
-      disabled={isLoading || totalAmount <= 0}
+      disabled={isLoading || totalAmount <= 0 || paymentStatus === 'completed'}
     >
       {isLoading ? (
         <span className={styles.loading}>
-          <i className="fas fa-spinner fa-spin"></i> Processing Pi Payment...
+          <i className="fas fa-spinner fa-spin"></i> {getButtonText()}
         </span>
       ) : (
         <>
-          Pay {totalAmount} Pi
+          {getButtonText()}
           <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1734023109/StorePi_mjubzf.svg"} alt="pilogo"/>
         </>
       )}
