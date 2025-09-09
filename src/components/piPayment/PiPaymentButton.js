@@ -46,42 +46,52 @@ const PiPaymentButton = () => {
     }
   };
 
+  const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, loading, pending, completed, failed
+  
   const handlePiPayment = async () => {
-    if (!window.Pi) {
-      toast.error("Pi Network not available. Please use Pi Browser.");
-      return;
-    }
+  if (!window.Pi) {
+    toast.error("Pi Network not available. Please use Pi Browser.");
+    return;
+  }
 
-    if (!userId) {
-      toast.error("Please login to continue");
-      navigate('/login');
-      return;
-    }
+  if (!userId) {
+    toast.error("Please login to continue");
+    navigate('/login');
+    return;
+  }
 
-    setIsLoading(true);
+  setIsLoading(true);
 
-    try {
-      const intentResult = await createPiPaymentIntent({
-        items: cartItems,
-        amount: totalAmount,
-        customerEmail
-      });
+  try {
+    // Étape 1: Créer l'intention de paiement côté serveur
+    const intentResult = await createPiPaymentIntent({
+      items: cartItems,
+      amount: totalAmount,
+      customerEmail
+    });
 
-      const { paymentId } = intentResult.data;
+    const { paymentId } = intentResult.data;
 
-      const payment = await window.Pi.createPayment({
-        amount: totalAmount,
-        memo: `Etralishop purchase - ${customerEmail}`,
-        metadata: {
-          products: cartItems.map(item => ({
-            id: item.id,
-            name: item.name,
-            quantity: item.cartQuantity,
-            price: item.price
-          }))
-        }
-      });
+    // Étape 2: Ouvrir le wallet Pi Network avec le paymentId
+    const payment = await window.Pi.createPayment({
+      paymentId: paymentId, // Utilise le paymentId du serveur
+      amount: totalAmount,
+      memo: `Etralishop purchase - ${customerEmail}`,
+      metadata: {
+        products: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.cartQuantity,
+          price: item.price
+        }))
+      }
+    });
 
+    // Étape 3: Le wallet va gérer la vérification du solde et l'approbation
+    // Le paiement sera en statut "pending" jusqu'à ce que l'utilisateur l'approuve
+
+    // Étape 4: Vérifier le paiement après approbation
+    if (payment.status === 'completed') {
       const verificationResult = await verifyPiPayment({
         paymentId: payment.identifier,
         txid: payment.transaction?.txid,
@@ -95,14 +105,30 @@ const PiPaymentButton = () => {
         toast.success(`Payment successful! Order ID: ${verificationResult.data.orderId}`);
         navigate('/checkout-success');
       }
-
-    } catch (error) {
-      console.error('Pi payment error:', error);
-      toast.error(error.message || 'Payment failed');
-    } finally {
-      setIsLoading(false);
+    } else if (payment.status === 'pending') {
+      setPaymentStatus('pending');
+      toast.info('Payment pending approval in your Pi wallet');
+      // Tu peux ajouter un webhook ou polling pour vérifier le statut
     }
-  };
+
+  } catch (error) {
+    console.error('Pi payment error:', error);
+    
+    // Gestion spécifique des erreurs
+    if (error.code === 'insufficient_balance') {
+      toast.error('Insufficient Pi balance in your wallet');
+    } else if (error.code === 'user_cancelled') {
+      toast.error('Payment cancelled by user');
+    } else if (error.code === 'unauthenticated') {
+      toast.error('Please login to continue');
+      navigate('/login');
+    } else {
+      toast.error(error.message || 'Payment failed');
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (!isPiAvailable) {
     return (

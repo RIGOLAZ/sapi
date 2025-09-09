@@ -83,6 +83,63 @@ exports.verifyPiPayment = functions.https.onCall(async (data, context) => {
   }
 });
 
+// exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => {
+//   try {
+//     const { items, customerEmail } = data;
+
+//     if (!context.auth) {
+//       throw new functions.https.HttpsError(
+//         "unauthenticated",
+//         "User must be authenticated"
+//       );
+//     }
+
+//     const totalAmount = items.reduce(
+//       (sum, item) => sum + item.price * item.cartQuantity,
+//       0
+//     );
+
+//     const response = await axios.post(
+//       "https://api.minepi.com/v2/payments",
+//       {
+//         amount: totalAmount,
+//         memo: `Etralishop purchase - ${customerEmail}`,
+//         metadata: {
+//           products: items.map((item) => ({
+//             id: item.id,
+//             name: item.name,
+//             quantity: item.cartQuantity,
+//             price: item.price,
+//           })),
+//         },
+//       },
+//       {
+//         headers: {
+//           Authorization: `Key ${PI_API_KEY}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     await admin.firestore().collection("paymentIntents").add({
+//       userId: context.auth.uid,
+//       paymentId: response.data.identifier,
+//       amount: totalAmount,
+//       items,
+//       status: "pending",
+//       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//     });
+
+//     return {
+//       paymentId: response.data.identifier,
+//       amount: response.data.amount,
+//     };
+//   } catch (error) {
+//     console.error("Pi payment intent error:", error);
+//     throw new functions.https.HttpsError("internal", error.message);
+//   }
+// });
+
 exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => {
   try {
     const { items, customerEmail } = data;
@@ -99,6 +156,7 @@ exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => 
       0
     );
 
+    // Créer le paiement directement avec l'API Pi
     const response = await axios.post(
       "https://api.minepi.com/v2/payments",
       {
@@ -121,6 +179,7 @@ exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => 
       }
     );
 
+    // Stocker les informations de paiement
     await admin.firestore().collection("paymentIntents").add({
       userId: context.auth.uid,
       paymentId: response.data.identifier,
@@ -131,8 +190,9 @@ exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => 
     });
 
     return {
-      paymentId: response.data.identifier,
+      paymentId: response.data.identifier, // C'est ce que tu utilises côté client
       amount: response.data.amount,
+      created_at: response.data.created_at
     };
   } catch (error) {
     console.error("Pi payment intent error:", error);
