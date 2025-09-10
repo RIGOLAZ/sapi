@@ -52,12 +52,12 @@ const PiPaymentButton = () => {
     toast.error("Pi Network not available. Please use Pi Browser.");
     return;
   }
-
-  if (!userId) {
-    toast.error("Please login to continue");
-    navigate('/login');
-    return;
-  }
+//Login before payment
+  // if (!userId) {
+  //   toast.error("Please login to continue");
+  //   navigate('/login');
+  //   return;
+  // }
 
   setIsLoading(true);
   setPaymentStatus('loading');
