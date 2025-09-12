@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { currency } from "..";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from 'react-toastify';
 import {
   ADD_TO_CART,
   CALCULATE_SUBTOTAL,
@@ -16,9 +15,8 @@ import {
 } from "../../redux/slice/cartSlice";
 import styles from "./Cart.module.css";
 import { FaTrashAlt } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Card from "../../components/card/Card";
-import { selectIsLoggedIn } from "../../redux/slice/authSlice";
 import PayWithPi from "../../components/piPayment/PayWithPi";
 
 const Cart = () => {
@@ -26,9 +24,6 @@ const Cart = () => {
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
   const dispatch = useDispatch();
-  const isLoggedIn = useSelector(selectIsLoggedIn);
-
-  const navigate = useNavigate();
 
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
@@ -51,25 +46,6 @@ const Cart = () => {
     dispatch(CALCULATE_TOTAL_QUANTITY());
     dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
-
-  const url = window.location.href;
-
-  const handlePiPaymentSuccess = (result) => {
-    toast.success(`Payment successful! Transaction ID: ${result.transactionId}`);
-  };
-
-  const handlePiPaymentError = (error) => {
-    toast.error(`Payment failed: ${error}`);
-  };
-
-  const checkout = () => {
-    if (isLoggedIn) {
-      navigate("/checkout-details");
-    } else {
-      dispatch(SAVE_URL(url));
-      navigate("/login");
-    }
-  };
 
   return (
     <section>
@@ -170,7 +146,6 @@ const Cart = () => {
                   <p>Tax an shipping calculated at checkout</p>
                       <PayWithPi
                       />
-                    {/* </div> */}
                 </Card>
               </div>
             </div>

@@ -1,0 +1,268 @@
+.paywithpi-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.payment-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e6ed;
+}
+
+.payment-header h2 {
+  color: #2c3e50;
+  margin: 0 0 10px 0;
+  font-size: 24px;
+}
+
+.timer {
+  font-size: 16px;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.timer .warning {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.payment-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.qr-section, .manual-section {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.qr-section h3, .manual-section h3 {
+  color: #34495e;
+  margin-top: 0;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.qr-instruction {
+  text-align: center;
+  color: #6c757d;
+  font-size: 14px;
+  margin: 0;
+}
+
+.wallet-address {
+  margin-bottom: 20px;
+}
+
+.wallet-address label {
+  display: block;
+  margin-bottom: 8px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.address-container {
+  display: flex;
+  gap: 10px;
+}
+
+.address-input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e9ecef;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.copy-btn {
+  padding: 10px 15px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.copy-btn:hover {
+  background: #2980b9;
+}
+
+.payment-details {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item .label {
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.detail-item .value {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.payment-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.btn-confirm, .btn-cancel, .btn-return {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-confirm {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-confirm:hover:not(:disabled) {
+  background: #229954;
+  transform: translateY(-2px);
+}
+
+.btn-confirm:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-cancel, .btn-return {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-cancel:hover, .btn-return:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+}
+
+.payment-info {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.payment-info h4 {
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.payment-info ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #495057;
+}
+
+.payment-info li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* États spéciaux */
+.paywithpi-container.expired {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+}
+
+.paywithpi-container.success {
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+}
+
+.payment-expired, .payment-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.payment-expired h3, .payment-success h3 {
+  color: #e74c3c;
+  margin-bottom: 15px;
+}
+
+.payment-success h3 {
+  color: #27ae60;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #27ae60;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .payment-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .paywithpi-container {
+    margin: 10px;
+    padding: 15px;
+  }
+  
+  .payment-actions {
+    flex-direction: column;
+  }
+  
+  .btn-confirm, .btn-cancel, .btn-return {
+    width: 100%;
+  }
+}
+
+/* Animation pour le timer */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.timer .warning {
+  animation: pulse 1s infinite;
+}
