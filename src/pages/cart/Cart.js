@@ -1,4 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { v4 as uuid } from 'uuid';   // npm i uuid
 import { currency } from "..";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
@@ -18,9 +21,9 @@ import styles from "./Cart.module.css";
 import { FaTrashAlt } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
-import { selectIsLoggedIn } from "../../redux/slice/authSlice";
+import { selectIsLoggedIn, selectUserID } from "../../redux/slice/authSlice";
 import PiPaymentButton from "../../components/piPayment/PiPaymentButton";
-// import { BiBorderTop } from "react-icons/bi";
+import PayWithPi from "./PayWithPi";
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
@@ -71,6 +74,25 @@ const Cart = () => {
       navigate("/login");
     }
   };
+
+  const [showPi, setShowPi] = useState(false);
+  const handleCreateOrder = async () => {
+  const id = uuid();                 // ou Firestore auto-id : doc(collection(db,'orders')).id
+  await setDoc(doc(db, 'orders', id), {
+    userId: selectUserID.uid,         // tu l’as déjà via ton Auth
+    items: cartItems,
+    selectCartTotalAmount,
+    status: 'pending',
+    createdAt: serverTimestamp()
+  });
+  return id;                         // on garde l’ID pour le composant Pi
+};
+
+const [orderId, setOrderId] = useState(null);
+
+const startPiPayment = async () => {
+  if (!orderId) setOrderId(await handleCreateOrder()); // créé une seule fois
+};
 
   return (
     <section>
@@ -173,6 +195,20 @@ const Cart = () => {
                         onPaymentSuccess={handlePiPaymentSuccess}
                         onPaymentError={handlePiPaymentError}
                       />
+                      {/* bouton qui fait apparaître le module Pi */}
+                      <button className="btn pi" onClick={startPiPayment}>
+                        Payer avec Pi Network
+                      </button>
+                      {showPi && (
+                        <PayWithPi
+                          orderId={orderId}        // généré juste avant (Firestore auto-id)
+                          totalPi={selectCartTotalAmount}
+                          onPaid={() => {
+                            clearCart();
+                            navigate('/success');
+                          }}
+                        />
+                      )}
                     {/* </div> */}
                 </Card>
               </div>
