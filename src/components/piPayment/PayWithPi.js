@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   doc, 
@@ -15,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase/config';
-import './PayWithPi.css';
+import './PayWithPi.module.css';
 
 const PayWithPi = ({ amount, orderId, onPaymentSuccess, onPaymentCancel, userId }) => {
   const [paymentData, setPaymentData] = useState(null);

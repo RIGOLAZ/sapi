@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { currency } from "..";
+// src/pages/cart/Cart.js
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import {
@@ -15,9 +15,8 @@ import {
   selectCartTotalQuantity,
 } from "../../redux/slice/cartSlice";
 import styles from "./Cart.module.css";
-import { FaTrashAlt } from "react-icons/fa";
+import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import Card from "../../components/card/Card";
 import { selectIsLoggedIn, selectUserID } from "../../redux/slice/authSlice";
 import PayWithPi from "../../components/piPayment/PayWithPi";
 
@@ -34,18 +33,22 @@ const Cart = () => {
 
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
+    toast.success(`${cart.name} added`, { position: "bottom-right" });
   };
 
   const decreaseCart = (cart) => {
     dispatch(DECREASE_CART(cart));
+    toast.info(`${cart.name} removed`, { position: "bottom-right" });
   };
 
   const removeFromCart = (cart) => {
     dispatch(REMOVE_FROM_CART(cart));
+    toast.error(`${cart.name} deleted`, { position: "bottom-right" });
   };
 
   const clearCart = () => {
     dispatch(CLEAR_CART());
+    toast.info('Cart cleared', { position: "bottom-right" });
   };
 
   useEffect(() => {
@@ -54,10 +57,8 @@ const Cart = () => {
     dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
 
-  const url = window.location.href;
-
   const handlePiPaymentSuccess = () => {
-    toast.success('Payment successful! Thank you for your purchase.');
+    toast.success('Payment completed');
     dispatch(CLEAR_CART());
     navigate('/checkout-success');
   };
@@ -68,145 +69,158 @@ const Cart = () => {
 
   const handlePiPayment = () => {
     if (!isLoggedIn) {
-      dispatch(SAVE_URL(url));
+      dispatch(SAVE_URL(window.location.href));
       navigate("/login");
       return;
     }
     
     if (cartItems.length === 0) {
-      toast.error("Your cart is empty!");
+      toast.error("Your cart is empty");
       return;
     }
     
     setShowPiPayment(true);
   };
 
-  return (
-    <section>
-      <div className={`container ${styles.table}`}>
-        <h2 style={{margin:'20px 0 0 0'}}>Shopping Cart</h2>
-        {cartItems.length === 0 ? (
-          <>
-            <p>Your cart is currently empty.</p>
-            <br />
-            <div>
-              <Link to="/#products">&larr; Continue shopping</Link>
-            </div>
-          </>
-        ) : (
-          <>
-          <br/>
-            <div>
-              <Link to="/#products">&larr; Continue shopping</Link>
-            </div>
-            <br/>
-            <table>
-              <thead>
-                <tr>
-                  <th>s/n</th>
-                  <th>Product</th>
-                  <th>Price</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.map((cart, index) => {
-                  const { id, name, price, imageURL, cartQuantity } = cart;
-                  return (
-                    <tr key={id}>
-                      <td>{index + 1}</td>
-                      <td>
-                        <p>
-                          <b>{name}</b>
-                        </p>
-                        <img
-                          src={imageURL}
-                          alt={name}
-                          style={{ width: "100px" }}
-                        />
-                      </td>
-                      <td>{currency} {price}</td>
-                      <td>
-                        <div className={styles.count}>
-                          <button
-                            className="--btn"
-                            onClick={() => decreaseCart(cart)}
-                            disabled={cartQuantity <= 1}
-                          >
-                            -
-                          </button>
-                          <p>
-                            <b>{cartQuantity}</b>
-                          </p>
-                          <button
-                            className="--btn"
-                            onClick={() => increaseCart(cart)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td>{currency} {(price * cartQuantity).toFixed(2)}</td>
-                      <td className={styles.icons}>
-                        <FaTrashAlt
-                          size={19}
-                          color="red"
-                          onClick={() => removeFromCart(cart)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className={styles.summary}>
-              <button className="--btn --btn-danger" onClick={clearCart}>
-                Clear Cart
-              </button>
-              <div className={styles.checkout}>
-                <div>
-                  <Link to="/#products">&larr; Continue shopping</Link>
-                </div>
-                <br />
-                <Card cardClass={styles.card}>
-                  <p>
-                    <b> {`Cart item(s): ${cartTotalQuantity}`}</b>
-                  </p>
-                  <div className={styles.text}>
-                    <h4>Subtotal:</h4>
-                    <h3>{`${currency} ${cartTotalAmount.toFixed(2)}`}</h3>
-                  </div>
-                  <p>Tax and shipping calculated at checkout</p>
-                  
-                  {/* UNIQUE BOUTON DE PAIEMENT - Pay with Pi Network */}
-                  <button 
-                    className="--btn --btn-primary" 
-                    onClick={handlePiPayment}
-                    style={{ marginBottom: '10px', width: '100%' }}
-                  >
-                    Pay with Pi Network
-                  </button>
-                  
-                  {/* Affichage du composant de paiement Pi */}
-                  {showPiPayment && (
-                    <PayWithPi
-                      cartItems={cartItems}
-                      totalAmount={cartTotalAmount}
-                      onSuccess={handlePiPaymentSuccess}
-                      onError={handlePiPaymentError}
-                      userId={userId}
-                    />
-                  )}
-                </Card>
-              </div>
-            </div>
-          </>
-        )}
+  if (cartItems.length === 0) {
+    return (
+      <div className={styles.emptyCart}>
+        <div className={styles.emptyContent}>
+          <div className={styles.emptyIcon}>
+            <FaShoppingBag />
+          </div>
+          <h2>Your cart is empty</h2>
+          <p>Add some products to get started</p>
+          <Link to="/#products" className={styles.emptyButton}>
+            Continue Shopping
+          </Link>
+        </div>
       </div>
-    </section>
+    );
+  }
+
+  return (
+    <div className={styles.cartContainer}>
+      <div className={styles.cartHeader}>
+        <h1>Shopping Cart</h1>
+        <p>{cartTotalQuantity} items</p>
+      </div>
+
+      <div className={styles.cartContent}>
+        <div className={styles.cartItems}>
+          <div className={styles.itemsHeader}>
+            <h3>Products</h3>
+            <button className={styles.clearButton} onClick={clearCart}>
+              <FaTrashAlt />
+              Clear all
+            </button>
+          </div>
+
+          {cartItems.map((item) => (
+            <div key={item.id} className={styles.cartItem}>
+              <div className={styles.itemImage}>
+                <img src={item.imageURL} alt={item.name} />
+              </div>
+              
+              <div className={styles.itemInfo}>
+                <h3>{item.name}</h3>
+                <p className={styles.itemCategory}>{item.category}</p>
+                <p className={styles.itemPrice}>€{item.price}</p>
+              </div>
+
+              <div className={styles.itemControls}>
+                <button 
+                  className={styles.controlBtn}
+                  onClick={() => decreaseCart(item)}
+                  disabled={item.cartQuantity <= 1}
+                >
+                  <FaMinus />
+                </button>
+                <span className={styles.quantity}>{item.cartQuantity}</span>
+                <button 
+                  className={styles.controlBtn}
+                  onClick={() => increaseCart(item)}
+                >
+                  <FaPlus />
+                </button>
+              </div>
+
+              <div className={styles.itemTotal}>
+                €{(item.price * item.cartQuantity).toFixed(2)}
+              </div>
+
+              <button 
+                className={styles.removeBtn}
+                onClick={() => removeFromCart(item)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.cartSummary}>
+          <div className={styles.summaryCard}>
+            <h3>Order Summary</h3>
+            
+            <div className={styles.summaryRow}>
+              <span>Subtotal</span>
+              <span>€{cartTotalAmount.toFixed(2)}</span>
+            </div>
+            
+            <div className={styles.summaryRow}>
+              <span>Delivery</span>
+              <span className={styles.free}>Free</span>
+            </div>
+            
+            <div className={styles.summaryRow}>
+              <span>Tax</span>
+              <span>Pi{(cartTotalAmount * 0).toFixed(2)}</span>
+            </div>
+            
+            <div className={styles.summaryTotal}>
+              <span>Total</span>
+              <span>Pi{(cartTotalAmount * 1).toFixed(2)}</span>
+            </div>
+
+            <button 
+              className={styles.checkoutButton}
+              onClick={handlePiPayment}
+            >
+              Pay with Pi Network
+            </button>
+
+            <div className={styles.securityNote}>
+              🔒 Secure payment with Pi Network
+            </div>
+          </div>
+
+          <Link to="/#products" className={styles.continueLink}>
+            Continue Shopping
+          </Link>
+        </div>
+      </div>
+
+      {showPiPayment && (
+        <div className={styles.modalOverlay} onClick={() => setShowPiPayment(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button 
+              className={styles.closeButton}
+              onClick={() => setShowPiPayment(false)}
+            >
+              <FaTimes />
+            </button>
+            <PayWithPi
+              cartItems={cartItems}
+              totalAmount={cartTotalAmount}
+              onSuccess={handlePiPaymentSuccess}
+              onError={handlePiPaymentError}
+              userId={userId}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

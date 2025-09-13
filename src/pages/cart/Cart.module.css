@@ -1,99 +1,389 @@
-/* Ajoutez ou modifiez ces styles dans Cart.module.css */
-
-.card {
+.piButton {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
   width: 100%;
 }
 
-/* Style pour le bouton Pay with Pi Network */
-.--btn-primary {
-  background: linear-gradient(135deg, #00a470, #008c5f);
-  color: white;
-  border: none;
-  padding: 12px 24px;
+.piButton:hover {
+  background: #333;
+}
+.cartContainer {
+  min-height: 100vh;
+  background: #fafafa;
+  padding: 60px 0;
+}
+
+.cartHeader {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.cartHeader h1 {
+  font-size: 32px;
+  font-weight: 300;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.cartHeader p {
+  color: #666;
+  font-size: 14px;
+}
+
+.cartContent {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.cartItems {
+  background: white;
   border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.itemsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 30px;
+  border-bottom: 1px solid #eee;
+}
+
+.itemsHeader h3 {
+  font-size: 18px;
+  font-weight: 400;
+  color: #1a1a1a;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.2s;
+}
+
+.clearButton:hover {
+  color: #1a1a1a;
+}
+
+.cartItem {
+  display: grid;
+  grid-template-columns: 100px 1fr auto auto auto;
+  gap: 30px;
+  align-items: center;
+  padding: 30px;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.2s;
+}
+
+.cartItem:hover {
+  background: #fcfcfc;
+}
+
+.cartItem:last-child {
+  border-bottom: none;
+}
+
+.itemImage {
+  width: 100px;
+  height: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.itemImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.itemInfo h3 {
+  font-size: 16px;
+  font-weight: 400;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.itemCategory {
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.itemPrice {
+  color: #666;
+  font-size: 14px;
+}
+
+.itemControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.controlBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
+  transition: all 0.2s;
+  color: #666;
 }
 
-.--btn-primary:hover {
-  background: linear-gradient(135deg, #008c5f, #007a4f);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 164, 112, 0.3);
+.controlBtn:hover {
+  border-color: #1a1a1a;
+  color: #1a1a1a;
 }
 
-.--btn-primary:disabled {
-  background: #cccccc;
+.controlBtn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
-.table {
-  padding: 5px;
-  width: 100%;
-  overflow-x: auto;
+.quantity {
+  min-width: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #1a1a1a;
 }
-.table table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 1.4rem;
+
+.itemTotal {
+  text-align: right;
 }
-.table table thead {
-  border-top: 2px solid var(--light-blue);
-  border-bottom: 2px solid var(--light-blue);
+
+.itemTotal {
+  font-size: 16px;
+  color: #1a1a1a;
+  font-weight: 500;
 }
-.table table th {
-  border: 1px solid #eee;
-}
-.table table th, .table table td {
-  vertical-align: top;
-  text-align: left;
-  padding: 8px;
-}
-.table table th.icons > *, .table table td.icons > * {
-  margin-right: 5px;
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: #ccc;
   cursor: pointer;
+  font-size: 16px;
+  transition: color 0.2s;
+  padding: 4px;
 }
-.table table tr {
-  border-bottom: 1px solid #ccc;
+
+.removeBtn:hover {
+  color: #666;
 }
-.table table tr:nth-child(even) {
-  background-color: #eee;
+
+.cartSummary {
+  position: sticky;
+  top: 20px;
 }
-.table .summary {
-  margin-top: 2rem;
+
+.summaryCard {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 30px;
+}
+
+.summaryCard h3 {
+  font-size: 18px;
+  font-weight: 400;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+}
+
+.summaryRow {
   display: flex;
   justify-content: space-between;
-  align-items: start;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
 }
-.table .summary .card {
-  padding: 1rem;
+
+.summaryRow:last-child {
+  margin-bottom: 20px;
 }
-.table .summary .card .text {
+
+.summaryTotal {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  font-size: 18px;
+  color: #1a1a1a;
+  font-weight: 500;
 }
-.table .summary .card .text h3 {
-  color: var(--color-danger);
+
+.checkoutButton {
+  width: 100%;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 20px;
 }
-.table .summary .card button {
-  margin-top: 5px;
+
+.checkoutButton:hover {
+  background: #333;
 }
-.count {
+
+.securityNote {
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+  margin-top: 12px;
+}
+
+.continueLink {
+  display: block;
+  text-align: center;
+  color: #666;
+  text-decoration: none;
+  font-size: 13px;
+  margin-top: 20px;
+  transition: color 0.2s;
+}
+
+.continueLink:hover {
+  color: #1a1a1a;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
 }
-.count button {
-  border: 1px solid var(--darkblue);
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
 }
-.count > * {
-  margin-right: 1rem;
+
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #999;
+  z-index: 1;
+}
+
+.closeButton:hover {
+  color: #666;
+}
+
+.emptyCart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40px;
+}
+
+.emptyContent {
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  color: #ddd;
+  margin-bottom: 20px;
+}
+
+.emptyContent h2 {
+  font-size: 24px;
+  font-weight: 300;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.emptyContent p {
+  color: #666;
+  margin-bottom: 24px;
+}
+
+.emptyButton {
+  display: inline-block;
+  background: #1a1a1a;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.emptyButton:hover {
+  background: #333;
+}
+
+@media (max-width: 768px) {
+  .cartContent {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .cartItem {
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .itemControls {
+    grid-column: 2;
+    margin-top: 12px;
+  }
+  
+  .itemTotal {
+    grid-column: 2;
+    text-align: left;
+    margin-top: 8px;
+  }
+  
+  .removeBtn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
 }

@@ -4,6 +4,8 @@ const initialState = {
   products: [],
   minPrice: null,
   maxPrice: null,
+  isLoading: false,
+  error: null,
 };
 
 const productSlice = createSlice({

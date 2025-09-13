@@ -1,3 +1,19 @@
+.piButton {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.piButton:hover {
+  background: #333;
+}
+
 .cart-container {
   max-width: 1200px;
   margin: 0 auto;
