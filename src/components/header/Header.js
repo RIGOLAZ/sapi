@@ -1,14 +1,12 @@
-import { useUniversalCart } from '../../hooks/useUniversalCart';
-import { FaUserCircle, FaTimes } from 'react-icons/fa';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import styles from "./Header.module.css";
+import { FaShoppingCart, FaTimes, FaUserCircle } from "react-icons/fa";
 import { HiOutlineMenuAlt3 } from "react-icons/hi";
 import { auth } from "../../firebase/config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   REMOVE_ACTIVE_USER,
   SET_ACTIVE_USER,
@@ -17,6 +15,8 @@ import ShowOnLogin, { ShowOnLogout } from "../hiddenLink/hiddenLink";
 import { AdminOnlyLink } from "../adminOnlyRoute/AdminOnlyRoute";
 import {
   CALCULATE_TOTAL_QUANTITY,
+  selectCartItems,
+  selectCartTotalQuantity,
 } from "../../redux/slice/cartSlice";
 
 const logo = (
@@ -30,7 +30,6 @@ const logo = (
       <img className={styles.pilo} src={"https://res.cloudinary.com/do8lyndou/image/upload/v1734023109/StorePi_mjubzf.svg"} alt="pilogo"/>
       <h6>Available soon</h6>
     </div>
-    {/* <img className={styles.xmas} src="https://res.cloudinary.com/do8lyndou/image/upload/v1735091749/Chapeau-N%C3%B6el_vbieyp.png" alt="hat" /> */}
   </div>
 );
 
@@ -39,15 +38,19 @@ const activeLink = ({ isActive }) => (isActive ? `${styles.active}` : "");
 const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [displayName, setdisplayName] = useState("");
-   const { cartTotal, user, getCurrentItemCount } = useUniversalCart();
-  const itemCount = getCurrentItemCount();
+  
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  
+  // Sélectionner les éléments du panier pour forcer la mise à jour
+  const cartItems = useSelector(selectCartItems);
+  const cartTotalQuantity = useSelector(selectCartTotalQuantity);
+
+  // Recalculer la quantité totale à chaque changement du panier
   useEffect(() => {
     dispatch(CALCULATE_TOTAL_QUANTITY());
-  }, []);
+  }, [cartItems, dispatch]);
 
-  const navigate = useNavigate();
-
-  const dispatch = useDispatch();
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -94,14 +97,16 @@ const Header = () => {
 
   const cart = (
     <span className={styles.cart}>
-      <Link to="/cart" className="cart-link">
-        <span>🛒</span>
-        {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
-        <span>{cartTotal.toFixed(2)} π</span>
+      <Link to="/cart">
+        Cart
+        <FaShoppingCart size={20} />
+        {cartTotalQuantity > 0 && (
+          <span className={styles.cartCount}>{cartTotalQuantity}</span>
+        )}
       </Link>
     </span>
   );
-  
+
   return (
     <>
       <header>

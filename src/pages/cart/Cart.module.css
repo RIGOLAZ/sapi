@@ -1,3 +1,39 @@
+/* Ajoutez ou modifiez ces styles dans Cart.module.css */
+
+.card {
+  width: 100%;
+}
+
+/* Style pour le bouton Pay with Pi Network */
+.--btn-primary {
+  background: linear-gradient(135deg, #00a470, #008c5f);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.--btn-primary:hover {
+  background: linear-gradient(135deg, #008c5f, #007a4f);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 164, 112, 0.3);
+}
+
+.--btn-primary:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 .table {
   padding: 5px;
