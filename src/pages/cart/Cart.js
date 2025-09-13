@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useCartSync } from '../../hooks/useCartSync';
+import { useUniversalCart } from '../../hooks/useUniversalCart';
 import { db } from '../../firebase/config';
 import PayWithPi from '../../components/piPayment/PayWithPi';
 // import './Cart.css'; // Décommente quand le fichier CSS sera créé
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { cartItems, cartTotal, user, removeFromCart, clearCart } = useCartSync();
-  const [showPiPayment, setShowPiPayment] = useState(false);
+const { cartItems, cartTotal, user, removeFromCart, clearCart, isLoading } = useUniversalCart();  const [showPiPayment, setShowPiPayment] = useState(false);
   const [orderId, setOrderId] = useState(null);
   const [loading, setLoading] = useState(false);
-
+  if (isLoading) {
+  return (
+    <div className="cart-loading">
+      <div className="spinner"></div>
+      <p>Synchronisation du panier...</p>
+    </div>
+  );
+}
   // Créer une commande
   const createOrder = async () => {
     if (!user || cartItems.length === 0) return null;
@@ -139,7 +145,7 @@ const Cart = () => {
           <div className="empty-cart-icon">🛒</div>
           <h2>Votre panier est vide</h2>
           <p>Ajoutez des articles pour commencer vos achats</p>
-          <button onClick={() => navigate('/products')} className="btn-continue-shopping">
+          <button onClick={() => navigate('/')} className="btn-continue-shopping">
             Continuer mes achats
           </button>
         </div>

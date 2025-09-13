@@ -1,6 +1,5 @@
-// Ajoute ces imports en haut du fichier Header.js
-import { FaShoppingCart, FaUserCircle, FaTimes } from 'react-icons/fa';
-import { useCartSync } from '../../hooks/useCartSync';
+import { useUniversalCart } from '../../hooks/useUniversalCart';
+import { FaUserCircle, FaTimes } from 'react-icons/fa';
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import styles from "./Header.module.css";
@@ -40,8 +39,8 @@ const activeLink = ({ isActive }) => (isActive ? `${styles.active}` : "");
 const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [displayName, setdisplayName] = useState("");
-  const { cartTotal, getItemCount } = useCartSync();
-  const itemCount = getItemCount();
+   const { cartTotal, user, getCurrentItemCount } = useUniversalCart();
+  const itemCount = getCurrentItemCount();
   useEffect(() => {
     dispatch(CALCULATE_TOTAL_QUANTITY());
   }, []);
@@ -95,8 +94,7 @@ const Header = () => {
 
   const cart = (
     <span className={styles.cart}>
-      <Link to="/cart">
-        Cart
+      <Link to="/cart" className="cart-link">
         <span>🛒</span>
         {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
         <span>{cartTotal.toFixed(2)} π</span>
