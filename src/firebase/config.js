@@ -4,15 +4,15 @@ import { getFirestore } from "firebase/firestore";
 import { getFunctions } from 'firebase/functions';
 import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
-export const firebaseConfig = {
-  apiKey: "AIzaSyCuIpfT-Z701h5r0Yj4tbrYc4EOAX54wTY",
-  authDomain: "ecomm-f0ae6.firebaseapp.com",
-  projectId: "ecomm-f0ae6",
-  storageBucket: "ecomm-f0ae6.appspot.com",
-  messagingSenderId: "120976159108",
-  appId: "1:120976159108:web:b5d5e4f10c1bdbdc622dd1",
-  measurementId: "G-V49E8KP5YP"
+// Configuration Firebase avec variables d'environnement
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

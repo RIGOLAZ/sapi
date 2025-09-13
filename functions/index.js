@@ -1,173 +1,272 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const axios = require("axios");
+const axios = require('axios');
 
 admin.initializeApp();
 
-const PI_API_KEY = process.env.PI_API_KEY;
-const PI_SECRET = process.env.PI_SECRET;
-const PI_SANDBOX = process.env.PI_SANDBOX === 'true';
+const db = admin.firestore();
+const PI_API_KEY = functions.config().pi_network.api_key;
+const PI_APP_NAME = functions.config().pi_network.app_name || 'etralishop';
 
-exports.verifyPiPayment = functions.https.onCall(async (data, context) => {
+// Créer un paiement Pi Network
+exports.createPiPayment = functions.https.onCall(async (data, context) => {
+  const { amount, orderId, userId, memo, metadata } = data;
+  
+  if (!context.auth || context.auth.uid !== userId) {
+    throw new functions.https.HttpsError('permission-denied', 'Non authentifié');
+  }
+
   try {
-    const { paymentId, items, customerEmail } = data;
-
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "User must be authenticated"
-      );
+    // Vérifier que la commande existe et n'est pas déjà payée
+    const orderDoc = await db.collection('orders').doc(orderId).get();
+    if (!orderDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Commande non trouvée');
+    }
+    
+    if (orderDoc.data().paymentStatus === 'paid') {
+      throw new functions.https.HttpsError('failed-precondition', 'Commande déjà payée');
     }
 
-    const response = await axios.get(
-      `https://api.minepi.com/v2/payments/${paymentId}`,
-      {
-        headers: {
-          Authorization: `Key ${PI_API_KEY}`,
-        },
-      }
-    );
+    // Créer le paiement dans Firestore
+    const paymentData = {
+      amount: amount,
+      orderId: orderId,
+      userId: userId,
+      memo: memo,
+      metadata: metadata,
+      status: 'created',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
 
-    const payment = response.data;
-
-    if (payment.status !== "completed") {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Payment not completed"
-      );
-    }
-
-    const orderRef = await admin
-      .firestore()
-      .collection("orders")
-      .add({
-        userId: context.auth.uid,
-        customerEmail,
-        items,
-        amount: payment.amount,
-        currency: payment.currency,
-        transactionId: payment.transaction.txid,
-        paymentId,
-        status: "completed",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-    await admin
-      .firestore()
-      .collection("users")
-      .doc(context.auth.uid)
-      .collection("orders")
-      .doc(orderRef.id)
-      .set({
-        orderId: orderRef.id,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-    await admin
-      .firestore()
-      .collection("users")
-      .doc(context.auth.uid)
-      .update({
-        cart: [],
-      });
-
+    const paymentRef = await db.collection('pi_payments').add(paymentData);
+    
     return {
       success: true,
-      orderId: orderRef.id,
-      transactionId: payment.transaction.txid,
+      paymentId: paymentRef.id,
+      paymentData: paymentData
     };
   } catch (error) {
-    console.error("Pi payment verification error:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    console.error('Erreur création paiement:', error);
+    throw new functions.https.HttpsError('internal', error.message);
   }
 });
 
-exports.createPiPaymentIntent = functions.https.onCall(async (data, context) => {
-  try {
-    const { items, customerEmail } = data;
+// Approuver un paiement
+exports.approvePiPayment = functions.https.onCall(async (data, context) => {
+  const { paymentId, paymentIdentifier, orderId, amount } = data;
+  
+  if (!context.auth) {
+    throw new functions.https.HttpsError('permission-denied', 'Non authentifié');
+  }
 
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "User must be authenticated"
-      );
+  try {
+    // Récupérer le paiement
+    const paymentDoc = await db.collection('pi_payments').doc(paymentId).get();
+    if (!paymentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Paiement non trouvé');
     }
 
-    const totalAmount = items.reduce(
-      (sum, item) => sum + item.price * item.cartQuantity,
-      0
-    );
-
-    // Créer le paiement directement avec l'API Pi
-    const response = await axios.post(
-      "https://api.minepi.com/v2/payments",
-      {
-        amount: totalAmount,
-        memo: `Etralishop purchase - ${customerEmail}`,
-        metadata: {
-          products: items.map((item) => ({
-            id: item.id,
-            name: item.name,
-            quantity: item.cartQuantity,
-            price: item.price,
-          })),
-        },
-      },
+    // Approuver via l'API Pi Network
+    const approveResponse = await axios.post(
+      `https://api.minepi.com/v2/payments/${paymentIdentifier}/approve`,
+      {},
       {
         headers: {
-          Authorization: `Key ${PI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+          'Authorization': `Key ${PI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
       }
     );
 
-    // Stocker les informations de paiement
-    await admin.firestore().collection("paymentIntents").add({
-      userId: context.auth.uid,
-      paymentId: response.data.identifier,
-      amount: totalAmount,
-      items,
-      status: "pending",
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    // Mettre à jour le statut dans Firestore
+    await db.collection('pi_payments').doc(paymentId).update({
+      status: 'approved',
+      paymentIdentifier: paymentIdentifier,
+      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    return {
-      paymentId: response.data.identifier, // C'est ce que tu utilises côté client
-      amount: response.data.amount,
-      created_at: response.data.created_at
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur approval:', error.response?.data || error.message);
+    
+    // Mettre à jour le statut d'erreur
+    await db.collection('pi_payments').doc(paymentId).update({
+      status: 'error',
+      error: error.message,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+// Compléter un paiement
+exports.completePiPayment = functions.https.onCall(async (data, context) => {
+  const { paymentId, paymentIdentifier, txid, orderId } = data;
+  
+  if (!context.auth) {
+    throw new functions.https.HttpsError('permission-denied', 'Non authentifié');
+  }
+
+  try {
+    // Compléter via l'API Pi Network
+    const completeResponse = await axios.post(
+      `https://api.minepi.com/v2/payments/${paymentIdentifier}/complete`,
+      { txid },
+      {
+        headers: {
+          'Authorization': `Key ${PI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Mettre à jour le paiement
+    const paymentUpdate = {
+      status: 'completed',
+      txid: txid,
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('pi_payments').doc(paymentId).update(paymentUpdate);
+
+    // Mettre à jour la commande
+    await db.collection('orders').doc(orderId).update({
+      paymentStatus: 'paid',
+      paymentMethod: 'pi_network',
+      paymentId: paymentId,
+      txid: txid,
+      paidAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Déclencher des fonctions supplémentaires
+    await handlePostPaymentTasks(orderId, paymentId);
+
+    return { 
+      success: true,
+      txid: txid
     };
   } catch (error) {
-    console.error("Pi payment intent error:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    console.error('Erreur completion:', error.response?.data || error.message);
+    
+    await db.collection('pi_payments').doc(paymentId).update({
+      status: 'error',
+      error: error.message,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    throw new functions.https.HttpsError('internal', error.message);
   }
 });
 
-exports.piWebhook = functions.https.onRequest(async (req, res) => {
+// Annuler un paiement
+exports.cancelPiPayment = functions.https.onCall(async (data, context) => {
+  const { paymentId, reason } = data;
+  
+  if (!context.auth) {
+    throw new functions.https.HttpsError('permission-denied', 'Non authentifié');
+  }
+
   try {
-    const { payment } = req.body;
+    await db.collection('pi_payments').doc(paymentId).update({
+      status: 'cancelled',
+      cancellationReason: reason,
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
 
-    if (payment.status === "completed") {
-      const querySnapshot = await admin
-        .firestore()
-        .collection("paymentIntents")
-        .where("paymentId", "==", payment.identifier)
-        .limit(1)
-        .get();
-
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        await doc.ref.update({
-          status: "completed",
-          transactionId: payment.transaction.txid,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-    }
-
-    res.status(200).send("OK");
+    return { success: true };
   } catch (error) {
-    console.error("Webhook error:", error);
-    res.status(500).send("Error");
+    console.error('Erreur annulation:', error);
+    throw new functions.https.HttpsError('internal', error.message);
   }
 });
+
+// Tâches après paiement
+async function handlePostPaymentTasks(orderId, paymentId) {
+  try {
+    // 1. Envoyer l'email de confirmation
+    await queueEmail('order_confirmation', { orderId });
+    
+    // 2. Mettre à jour l'inventaire
+    await updateInventory(orderId);
+    
+    // 3. Créer une notification
+    await createNotification(orderId, 'payment_completed');
+    
+    // 4. Logs analytics
+    await logAnalyticsEvent('purchase', {
+      order_id: orderId,
+      payment_id: paymentId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+  } catch (error) {
+    console.error('Erreur tâches post-paiement:', error);
+    // Ne pas bloquer le paiement si ces tâches échouent
+  }
+}
+
+// Fonctions helper
+async function queueEmail(type, data) {
+  return db.collection('mail').add({
+    to: data.email,
+    message: {
+      subject: getEmailSubject(type),
+      html: getEmailTemplate(type, data)
+    }
+  });
+}
+
+async function updateInventory(orderId) {
+  const orderDoc = await db.collection('orders').doc(orderId).get();
+  const items = orderDoc.data().items || [];
+  
+  const batch = db.batch();
+  
+  for (const item of items) {
+    const productRef = db.collection('products').doc(item.productId);
+    batch.update(productRef, {
+      stock: admin.firestore.FieldValue.increment(-item.quantity),
+      sold: admin.firestore.FieldValue.increment(item.quantity)
+    });
+  }
+  
+  await batch.commit();
+}
+
+async function createNotification(orderId, type) {
+  return db.collection('notifications').add({
+    orderId: orderId,
+    type: type,
+    read: false,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function logAnalyticsEvent(name, params) {
+  return db.collection('analytics_events').add({
+    name: name,
+    params: params,
+    timestamp: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// Fonctions helper pour emails
+function getEmailSubject(type) {
+  const subjects = {
+    order_confirmation: 'Confirmation de commande EtraliShop',
+    payment_received: 'Paiement reçu - EtraliShop'
+  };
+  return subjects[type] || 'Notification EtraliShop';
+}
+
+function getEmailTemplate(type, data) {
+  // Templates HTML pour les emails
+  // À implémenter selon tes besoins
+  return `<h1>Votre commande #${data.orderId} est confirmée</h1>`;
+}

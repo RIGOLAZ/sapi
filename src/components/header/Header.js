@@ -1,13 +1,15 @@
+// Ajoute ces imports en haut du fichier Header.js
+import { FaShoppingCart, FaUserCircle, FaTimes } from 'react-icons/fa';
+import { useCartSync } from '../../hooks/useCartSync';
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import styles from "./Header.module.css";
-import { FaShoppingCart, FaTimes, FaUserCircle } from "react-icons/fa";
 import { HiOutlineMenuAlt3 } from "react-icons/hi";
 import { auth } from "../../firebase/config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { toast } from "react-toastify";
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   REMOVE_ACTIVE_USER,
   SET_ACTIVE_USER,
@@ -16,7 +18,6 @@ import ShowOnLogin, { ShowOnLogout } from "../hiddenLink/hiddenLink";
 import { AdminOnlyLink } from "../adminOnlyRoute/AdminOnlyRoute";
 import {
   CALCULATE_TOTAL_QUANTITY,
-  selectCartTotalQuantity,
 } from "../../redux/slice/cartSlice";
 
 const logo = (
@@ -39,8 +40,8 @@ const activeLink = ({ isActive }) => (isActive ? `${styles.active}` : "");
 const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [displayName, setdisplayName] = useState("");
-  const cartTotalQuantity = useSelector(selectCartTotalQuantity);
-
+  const { cartTotal, getItemCount } = useCartSync();
+  const itemCount = getItemCount();
   useEffect(() => {
     dispatch(CALCULATE_TOTAL_QUANTITY());
   }, []);
@@ -51,7 +52,6 @@ const Header = () => {
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // console.log(user);
         if (user.displayName == null) {
           const u1 = user.email.slice(0, -10);
           const uName = u1.charAt(0).toUpperCase() + u1.slice(1);
@@ -97,8 +97,9 @@ const Header = () => {
     <span className={styles.cart}>
       <Link to="/cart">
         Cart
-        <FaShoppingCart size={20} />
-        <p>{cartTotalQuantity}</p>
+        <span>🛒</span>
+        {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
+        <span>{cartTotal.toFixed(2)} π</span>
       </Link>
     </span>
   );
