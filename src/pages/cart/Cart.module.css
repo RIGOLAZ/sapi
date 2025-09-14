@@ -346,7 +346,7 @@
 .emptyButton {
   display: inline-block;
   background: #1a1a1a;
-  color: white;
+  color: turquoise;
   padding: 12px 24px;
   border-radius: 4px;
   text-decoration: none;
@@ -356,6 +356,7 @@
 
 .emptyButton:hover {
   background: #333;
+  color: white
 }
 
 @media (max-width: 768px) {

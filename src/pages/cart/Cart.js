@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
+import { currency } from "..";
 import {
   ADD_TO_CART,
   CALCULATE_SUBTOTAL,
@@ -67,20 +68,38 @@ const Cart = () => {
     toast.error(`Payment failed: ${error.message || error}`);
   };
 
-  const handlePiPayment = () => {
-    if (!isLoggedIn) {
-      dispatch(SAVE_URL(window.location.href));
-      navigate("/login");
-      return;
-    }
-    
-    if (cartItems.length === 0) {
-      toast.error("Your cart is empty");
-      return;
-    }
-    
-    setShowPiPayment(true);
-  };
+ // Dans Cart.js - sécuriser l'appel
+const handlePiPayment = () => {
+  if (!isLoggedIn) {
+    dispatch(SAVE_URL(window.location.href));
+    navigate("/login");
+    return;
+  }
+  
+  // Validation stricte des données
+  if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+    toast.error("Your cart is empty");
+    return;
+  }
+  
+  if (typeof cartTotalAmount !== 'number' || cartTotalAmount <= 0) {
+    toast.error("Invalid cart total");
+    return;
+  }
+  
+  if (!userId) {
+    toast.error("Please log in to continue");
+    return;
+  }
+  
+  console.log('PayWithPi called with:', {
+    cartItemsCount: cartItems.length,
+    totalAmount: cartTotalAmount,
+    userId: userId
+  });
+  
+  setShowPiPayment(true);
+};
 
   if (cartItems.length === 0) {
     return (
@@ -125,7 +144,7 @@ const Cart = () => {
               <div className={styles.itemInfo}>
                 <h3>{item.name}</h3>
                 <p className={styles.itemCategory}>{item.category}</p>
-                <p className={styles.itemPrice}>€{item.price}</p>
+                <p className={styles.itemPrice}>{currency} {item.price}</p>
               </div>
 
               <div className={styles.itemControls}>
@@ -146,7 +165,7 @@ const Cart = () => {
               </div>
 
               <div className={styles.itemTotal}>
-                €{(item.price * item.cartQuantity).toFixed(2)}
+                {currency} {(item.price * item.cartQuantity).toFixed(2)}
               </div>
 
               <button 
@@ -165,7 +184,7 @@ const Cart = () => {
             
             <div className={styles.summaryRow}>
               <span>Subtotal</span>
-              <span>€{cartTotalAmount.toFixed(2)}</span>
+              <span>{currency} {cartTotalAmount.toFixed(2)}</span>
             </div>
             
             <div className={styles.summaryRow}>
@@ -175,12 +194,12 @@ const Cart = () => {
             
             <div className={styles.summaryRow}>
               <span>Tax</span>
-              <span>Pi{(cartTotalAmount * 0).toFixed(2)}</span>
+              <span>{currency} {(cartTotalAmount * 0).toFixed(2)}</span>
             </div>
             
             <div className={styles.summaryTotal}>
               <span>Total</span>
-              <span>Pi{(cartTotalAmount * 1).toFixed(2)}</span>
+              <span>{currency} {(cartTotalAmount * 1).toFixed(2)}</span>
             </div>
 
             <button 
