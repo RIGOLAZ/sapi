@@ -1,4 +1,43 @@
 /* src/components/piPayment/PayWithPi.module.css */
+/* src/components/piPayment/PayWithPi.module.css - Ajouter ces styles */
+.qrContainer {
+  position: relative;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 25px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: qrFloat 3s ease-in-out infinite;
+}
+
+.qrCode {
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+  background: white;
+  padding: 20px;
+}
+
+.qrCode canvas {
+  border-radius: 10px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Effet de lueur sur le QR code */
+@keyframes qrFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.qrContainer:hover {
+  box-shadow: 
+    0 15px 50px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-5px);
+}
 .payWithPiContainer {
   background: var(--color-white);
   border-radius: var(--radius-md);

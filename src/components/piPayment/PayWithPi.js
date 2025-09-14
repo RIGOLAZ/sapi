@@ -1,5 +1,6 @@
-// src/components/piPayment/PayWithPi.js - Version ultra-sécurisée
+// src/components/piPayment/PayWithPi.js
 import React, { useState } from 'react';
+import { QRCodeCanvas } from 'qrcode.react'; // AJOUTER CET IMPORT
 import { toast } from 'react-toastify';
 import { FaQrcode, FaCopy, FaCheck } from 'react-icons/fa';
 import styles from './PayWithPi.module.css';
@@ -8,25 +9,14 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
   const [paymentStep, setPaymentStep] = useState('initial');
   const [transactionId, setTransactionId] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [qrData, setQrData] = useState(null); // AJOUTER CET ÉTAT
 
-  // VALIDATION ULTRA-STRICTE des données
+  // Validation des données
   const validateProps = () => {
-    if (!Array.isArray(cartItems)) {
-      console.error('cartItems is not an array:', cartItems);
-      return false;
-    }
-    if (cartItems.length === 0) {
-      console.error('cartItems is empty');
-      return false;
-    }
-    if (typeof totalAmount !== 'number' || totalAmount <= 0) {
-      console.error('Invalid totalAmount:', totalAmount);
-      return false;
-    }
-    if (!userId) {
-      console.error('Invalid userId:', userId);
-      return false;
-    }
+    if (!Array.isArray(cartItems)) return false;
+    if (cartItems.length === 0) return false;
+    if (typeof totalAmount !== 'number' || totalAmount <= 0) return false;
+    if (!userId) return false;
     return true;
   };
 
@@ -37,12 +27,27 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
       }
 
       setPaymentStep('generating');
-      
-      // Simulation de la génération du paiement
       await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // GÉNÉRER LE VRAI CODE QR
+      const PI_WALLET_ADDRESS = process.env.REACT_APP_PI_WALLET_ADDRESS || 'GDRVFVPXGHDCQ2P3M2NIMkNiqzSLrZL4k';
+      const orderId = `ORDER_${Date.now()}`;
       
-      setPaymentStep('payment_ready');
-      toast.success('Payment request ready');
+      // Créer l'URI pour le paiement Pi
+      const piUri = `pi://payment?address=${PI_WALLET_ADDRESS}&amount=${totalAmount}&memo=Order-${orderId}`;
+      
+      setQrData({
+        uri: piUri,
+        paymentData: {
+          address: PI_WALLET_ADDRESS,
+          amount: totalAmount,
+          memo: `Order ${orderId}`,
+          orderId: orderId
+        }
+      });
+
+      setPaymentStep('qr_generated');
+      toast.success('QR Code generated! Scan with Pi Network app.');
       
     } catch (error) {
       console.error('Payment generation error:', error);
@@ -53,10 +58,11 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
   };
 
   const copyPaymentLink = () => {
-    const paymentLink = `pi://payment?address=GDRVFVPXGHDCQ2P3M2NIMkNiqzSLrZL4k&amount=${totalAmount}&memo=Order`;
-    navigator.clipboard.writeText(paymentLink)
-      .then(() => toast.success('Payment link copied!'))
-      .catch(() => toast.error('Failed to copy link'));
+    if (qrData?.uri) {
+      navigator.clipboard.writeText(qrData.uri)
+        .then(() => toast.success('Payment link copied!'))
+        .catch(() => toast.error('Failed to copy link'));
+    }
   };
 
   const verifyPayment = async () => {
@@ -67,13 +73,10 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
 
     setIsVerifying(true);
     try {
-      // Simulation de vérification
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
       setPaymentStep('completed');
       toast.success('Payment verified!');
       if (onSuccess) onSuccess({ transactionId });
-      
     } catch (error) {
       setPaymentStep('failed');
       toast.error('Verification failed');
@@ -89,12 +92,7 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
         <div className={styles.errorIcon}>⚠️</div>
         <h3>Invalid Cart Data</h3>
         <p>Please check your cart and try again.</p>
-        <button 
-          className={styles.retryButton}
-          onClick={() => window.location.reload()}
-        >
-          Refresh Page
-        </button>
+        <button onClick={() => window.location.reload()}>Refresh Page</button>
       </div>
     );
   }
@@ -111,10 +109,7 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
             </div>
           </div>
           
-          <button 
-            className={styles.generatePaymentBtn}
-            onClick={generatePayment}
-          >
+          <button className={styles.generatePaymentBtn} onClick={generatePayment}>
             <FaQrcode />
             Generate Pi Payment
           </button>
@@ -128,30 +123,33 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
         </div>
       )}
 
-      {paymentStep === 'payment_ready' && (
-        <div className={styles.paymentReadyView}>
-          <div className={styles.qrSection}>
-            <h4>Scan to Pay</h4>
-            <div className={styles.qrPlaceholder}>
-              <FaQrcode size={48} />
-              <p>QR Code Placeholder</p>
-            </div>
+      {paymentStep === 'qr_generated' && (
+        <div className={styles.qrStep}>
+          <h4>Scan with Pi Network App</h4>
+          <div className={styles.qrContainer}>
+            {/* CODE QR RÉEL */}
+            {qrData && (
+              <QRCodeCanvas 
+                value={qrData.uri}
+                size={200}
+                level="H"
+                includeMargin={true}
+                className={styles.qrCode}
+              />
+            )}
           </div>
-
+          
           <div className={styles.paymentDetails}>
             <p><strong>Amount:</strong> {totalAmount} PI</p>
             <p><strong>Wallet:</strong> GDRVFVPXGHDCQ2P3M2NIMkNiqzSLrZL4k</p>
           </div>
 
           <div className={styles.actions}>
-            <button 
-              className={styles.copyButton}
-              onClick={copyPaymentLink}
-            >
+            <button className={styles.copyButton} onClick={copyPaymentLink}>
               <FaCopy />
               Copy Payment Link
             </button>
-
+            
             <div className={styles.manualVerify}>
               <input
                 type="text"
@@ -165,7 +163,7 @@ const PayWithPi = ({ cartItems, totalAmount, onSuccess, onError, userId }) => {
                 onClick={verifyPayment}
                 disabled={isVerifying}
               >
-                {isVerifying ? <div className={styles.smallSpinner}></div> : 'Verify'}
+                {isVerifying ? 'Verifying...' : 'Verify'}
               </button>
             </div>
           </div>
