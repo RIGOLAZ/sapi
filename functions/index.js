@@ -4,15 +4,15 @@ const axios     = require("axios");
 
 // Récupération des clés stockées dans Firebase Config
 const PI_KEY  = process.env.PI_KEY;
-const PI_API  = 'https://api.minepi.com/v2';
+const PI_API = 'https://api.minepi.com/v2';
 const HEADERS = { headers: { Authorization: `Key ${PI_KEY}` } };
 
 // ---------- 1) Créer la facture Pi ----------
 exports.createPiPayment = functions.https.onCall(async (data, context) => {
   // Sécurité : appel authentifié (facultatif, tu peux l’enlever)
-  if (!context.auth && !functions.config().pinetwork?.bypassauth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in');
-  }
+  // if (!context.auth && !functions.config().pinetwork?.bypassauth) {
+  //   throw new functions.https.HttpsError('unauthenticated', 'User must be logged in');
+  // }
 
   const { amount, memo, orderId } = data;
   const body = {
