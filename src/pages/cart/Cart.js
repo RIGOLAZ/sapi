@@ -17,8 +17,8 @@ import {
 } from "../../redux/slice/cartSlice";
 import styles from "./Cart.module.css";
 import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
-import PayWithPi from "../../components/piPayment/PayWithPi";
+import { Link } from "react-router-dom";
+import PayWithPi from "../../components/piPayment/PayWithPi";   // ← import
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
@@ -58,18 +58,16 @@ const Cart = () => {
     return (
       <div className={styles.emptyCart}>
         <div className={styles.emptyContent}>
-          <div className={styles.emptyIcon}>
-            <FaShoppingBag />
-          </div>
+          <div className={styles.emptyIcon}><FaShoppingBag /></div>
           <h2>Your cart is empty</h2>
           <p>Add some products to get started</p>
-          <Link to="/#products" className={styles.emptyButton}>
-            Continue Shopping
-          </Link>
+          <Link to="/#products" className={styles.emptyButton}>Continue Shopping</Link>
         </div>
       </div>
     );
   }
+
+  const orderId = `CMD-${Date.now()}`;
 
   return (
     <div className={styles.cartContainer}>
@@ -83,8 +81,7 @@ const Cart = () => {
           <div className={styles.itemsHeader}>
             <h3>Products</h3>
             <button className={styles.clearButton} onClick={clearCart}>
-              <FaTrashAlt />
-              Clear all
+              <FaTrashAlt /> Clear all
             </button>
           </div>
 
@@ -93,7 +90,6 @@ const Cart = () => {
               <div className={styles.itemImage}>
                 <img src={item.imageURL} alt={item.name} />
               </div>
-              
               <div className={styles.itemInfo}>
                 <h3>{item.name}</h3>
                 <p className={styles.itemCategory}>{item.category}</p>
@@ -101,32 +97,26 @@ const Cart = () => {
               </div>
 
               <div className={styles.itemControls}>
-                <button 
+                <button
                   className={styles.controlBtn}
                   onClick={() => decreaseCart(item)}
                   disabled={item.cartQuantity <= 1}
-                >
-                  <FaMinus />
-                </button>
+                ><FaMinus /></button>
                 <span className={styles.quantity}>{item.cartQuantity}</span>
-                <button 
+                <button
                   className={styles.controlBtn}
                   onClick={() => increaseCart(item)}
-                >
-                  <FaPlus />
-                </button>
+                ><FaPlus /></button>
               </div>
 
               <div className={styles.itemTotal}>
                 {currency} {(item.price * item.cartQuantity).toFixed(2)}
               </div>
 
-              <button 
+              <button
                 className={styles.removeBtn}
                 onClick={() => removeFromCart(item)}
-              >
-                <FaTimes />
-              </button>
+              ><FaTimes /></button>
             </div>
           ))}
         </div>
@@ -134,30 +124,29 @@ const Cart = () => {
         <div className={styles.cartSummary}>
           <div className={styles.summaryCard}>
             <h3>Order Summary</h3>
-            
             <div className={styles.summaryRow}>
               <span>Subtotal</span>
               <span>{currency} {cartTotalAmount.toFixed(2)}</span>
             </div>
-            
             <div className={styles.summaryRow}>
               <span>Delivery</span>
               <span className={styles.free}>Free</span>
             </div>
-            
             <div className={styles.summaryRow}>
               <span>Tax</span>
               <span>{currency} {(cartTotalAmount * 0).toFixed(2)}</span>
             </div>
-            
             <div className={styles.summaryTotal}>
               <span>Total</span>
-              <span>{currency} {(cartTotalAmount * 1).toFixed(2)}</span>
+              <span>{currency} {cartTotalAmount.toFixed(2)}</span>
             </div>
 
-            <button 
-              className={styles.checkoutButton}>
-              Pay with Pi Network
+            {/* BOUTON QUI OUVRE LE PAIEMENT PI */}
+            <button
+              className={styles.checkoutButton}
+              onClick={() => setShowPiPayment(true)}
+            >
+              Pay {cartTotalAmount.toFixed(2)} Pi
             </button>
 
             <div className={styles.securityNote}>
@@ -171,16 +160,23 @@ const Cart = () => {
         </div>
       </div>
 
+      {/* MODAL CONDITIONNEL : PayWithPi */}
       {showPiPayment && (
         <div className={styles.modalOverlay} onClick={() => setShowPiPayment(false)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button 
-              className={styles.closeButton}
-              onClick={() => setShowPiPayment(false)}
-            >
+            <button className={styles.closeButton} onClick={() => setShowPiPayment(false)}>
               <FaTimes />
             </button>
-            <PayWithPi/>
+
+            <PayWithPi
+              amountPi={cartTotalAmount}
+              memo={`Order ${orderId} – EtraliShop`}
+              onSuccess={(paymentId) => {
+                toast.success(`Payment successful ! ID=${paymentId}`);
+                setShowPiPayment(false);
+                // vider le panier ou rediriger ici si tu veux
+              }}
+            />
           </div>
         </div>
       )}
