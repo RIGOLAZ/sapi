@@ -1,5 +1,5 @@
 // src/pages/cart/Cart.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import { currency } from "..";
@@ -18,7 +18,6 @@ import {
 import styles from "./Cart.module.css";
 import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import { selectIsLoggedIn, selectUserID } from "../../redux/slice/authSlice";
 import PayWithPi from "../../components/piPayment/PayWithPi";
 
 const Cart = () => {
@@ -26,9 +25,6 @@ const Cart = () => {
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
   const dispatch = useDispatch();
-  const isLoggedIn = useSelector(selectIsLoggedIn);
-  const userId = useSelector(selectUserID);
-  const navigate = useNavigate();
 
   const [showPiPayment, setShowPiPayment] = useState(false);
 
@@ -57,49 +53,6 @@ const Cart = () => {
     dispatch(CALCULATE_TOTAL_QUANTITY());
     dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
-
-  const handlePiPaymentSuccess = () => {
-    toast.success('Payment completed');
-    dispatch(CLEAR_CART());
-    navigate('/checkout-success');
-  };
-
-  const handlePiPaymentError = (error) => {
-    toast.error(`Payment failed: ${error.message || error}`);
-  };
-
- // Dans Cart.js - sécuriser l'appel
-const handlePiPayment = () => {
-  if (!isLoggedIn) {
-    dispatch(SAVE_URL(window.location.href));
-    navigate("/login");
-    return;
-  }
-  
-  // Validation stricte des données
-  if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
-    toast.error("Your cart is empty");
-    return;
-  }
-  
-  if (typeof cartTotalAmount !== 'number' || cartTotalAmount <= 0) {
-    toast.error("Invalid cart total");
-    return;
-  }
-  
-  if (!userId) {
-    toast.error("Please log in to continue");
-    return;
-  }
-  
-  console.log('PayWithPi called with:', {
-    cartItemsCount: cartItems.length,
-    totalAmount: cartTotalAmount,
-    userId: userId
-  });
-  
-  setShowPiPayment(true);
-};
 
   if (cartItems.length === 0) {
     return (
@@ -203,9 +156,7 @@ const handlePiPayment = () => {
             </div>
 
             <button 
-              className={styles.checkoutButton}
-              onClick={handlePiPayment}
-            >
+              className={styles.checkoutButton}>
               Pay with Pi Network
             </button>
 
@@ -229,13 +180,7 @@ const handlePiPayment = () => {
             >
               <FaTimes />
             </button>
-            <PayWithPi
-              cartItems={cartItems}
-              totalAmount={cartTotalAmount}
-              onSuccess={handlePiPaymentSuccess}
-              onError={handlePiPaymentError}
-              userId={userId}
-            />
+            <PayWithPi/>
           </div>
         </div>
       )}
