@@ -1,28 +1,22 @@
-// Remplacez complètement le contenu par :
-
+// src/components/piPayment/PayWithPi.js
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import styles from "./PayWithPi.module.css";
 
 export default function PayWithPi({ amountPi, memo, onSuccess }) {
   const [loading, setLoading] = useState(false);
-  const [erreur, setErreur] = useState(null);
-  const [piLoaded, setPiLoaded] = useState(false);
+  const [erreur, setErreur]   = useState(null);
+  const [piReady, setPiReady] = useState(false);
 
   useEffect(() => {
-    // Vérifie que Pi SDK est chargé
-    const checkPi = setInterval(() => {
-      if (window.Pi) {
-        setPiLoaded(true);
-        clearInterval(checkPi);
-      }
-    }, 100);
-    
-    return () => clearInterval(checkPi);
+    // attend que Pi SDK soit chargé
+    const t = setInterval(() => {
+      if (window.Pi) { clearInterval(t); setPiReady(true); }
+    }, 200);
+    return () => clearInterval(t);
   }, []);
 
-  if (!piLoaded) {
-    return <p className={styles.err}>Chargement de Pi Network...</p>;
-  }
+  if (!piReady) return <p className={styles.err}>Chargement de Pi Network…</p>;
 
   const Pi = window.Pi;
 
@@ -31,60 +25,48 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
     setLoading(true);
 
     try {
-      // Génération d'un orderId unique
       const orderId = `order_${Date.now()}`;
-      
-      /* ---------- 1) CRÉER LA FACTURE ---------- */
-      const createResponse = await fetch(
-  "https://us-central1-ecomm-f0ae6.cloudfunctions.net/createPiPayment",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      amount: Number(amountPi),   // ← number impératif
-      memo,
-      orderId
-    })
-  }
-);
 
-      if (!createResponse.ok) {
-        throw new Error(`Erreur serveur: ${createResponse.status}`);
-      }
-
-      const { paymentId, tx_url } = await createResponse.json();
-
-      /* ---------- 2) SIGNER LA TRANSACTION ---------- */
-      const paymentResult = await Pi.createPayment(tx_url);
-      
-      /* ---------- 3) VÉRIFICATION ---------- */
-      const verifyResponse = await fetch(
-        "https://us-central1-ecomm-f0ae6.cloudfunctions.net/verifyPiPayment",
+      // 1. Créer la facture côté serveur
+      const createRes = await fetch(
+        "https://us-central1-ecomm-f0ae6.cloudfunctions.net/createPiPayment",
         {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({ 
-            paymentId,
-            orderId
-          })
+          method : "POST",
+          headers: { "Content-Type": "application/json" },
+          body   : JSON.stringify({ amount: Number(amountPi), memo, orderId })
         }
       );
 
-      if (!verifyResponse.ok) {
-        throw new Error(`Erreur vérification: ${verifyResponse.status}`);
+      if (!createRes.ok) {
+        const txt = await createRes.text();
+        throw new Error(`Serveur ${createRes.status} : ${txt}`);
       }
 
-      const { ok } = await verifyResponse.json();
+      const { paymentId, tx_url } = await createRes.json();
+
+      // 2. Signer la transaction dans Pi Browser
+      await Pi.createPayment(tx_url);
+
+      // 3. Vérification
+      const verifRes = await fetch(
+        "https://us-central1-ecomm-f0ae6.cloudfunctions.net/verifyPiPayment",
+        {
+          method : "POST",
+          headers: { "Content-Type": "application/json" },
+          body   : JSON.stringify({ paymentId, orderId })
+        }
+      );
+      const { ok } = await verifRes.json();
       if (!ok) throw new Error("Paiement non confirmé");
 
+      toast.success(`Paiement réussi ! ID=${paymentId}`);
       onSuccess(paymentId);
-      
+
     } catch (e) {
-      console.error("Erreur complète:", e);
-      setErreur(e.message || "Erreur inconnue");
+      const msg = e.message || JSON.stringify(e);
+      console.error(">>> PayWithPi catch :", msg);
+      setErreur(msg);
+      toast.error(`Paiement : ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -97,10 +79,15 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
       <p>{memo}</p>
 
       <button onClick={payer} disabled={loading} className={styles.btn}>
-        {loading ? "Traitement..." : "Confirmer le paiement"}
+        {loading ? "Traitement…" : "Confirmer le paiement"}
       </button>
 
-      {erreur && <p className={styles.err}>{erreur}</p>}
+      {erreur && (
+        <details className={styles.err}>
+          <summary>Erreur complète</summary>
+          <pre>{erreur}</pre>
+        </details>
+      )}
     </div>
   );
 }
