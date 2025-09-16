@@ -34,11 +34,11 @@ export const createPiPayment = onCall(
       throw new HttpsError("invalid-argument", "amount, memo, orderId required");
 
     const payload = {
-      amount,
-      memo,
-      metadata: { orderId },
-      uid: ""                       // obligatoire même vide
-    };
+  amount: amount.toString(), // ← convertir en string
+  memo,
+  metadata: { orderId },
+  uid: ""
+};
 
     try {
       console.log(">>> Pi payload", JSON.stringify(payload));   // ← log
