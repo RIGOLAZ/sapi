@@ -36,20 +36,17 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
       
       /* ---------- 1) CRÉER LA FACTURE ---------- */
       const createResponse = await fetch(
-        "https://us-central1-ecomm-f0ae6.cloudfunctions.net/createPiPayment",
-        {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({ 
-            amount: amountPi, 
-            memo,
-            orderId 
-          })
-        }
-      );
+  "https://us-central1-ecomm-f0ae6.cloudfunctions.net/createPiPayment",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: Number(amountPi),   // ← number impératif
+      memo,
+      orderId
+    })
+  }
+);
 
       if (!createResponse.ok) {
         throw new Error(`Erreur serveur: ${createResponse.status}`);
