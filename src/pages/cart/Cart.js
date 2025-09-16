@@ -18,7 +18,7 @@ import {
 import styles from "./Cart.module.css";
 import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import PayWithPi from "../../components/piPayment/PayWithPi";   // ← import
+import PayWithPi from "../../components/piPayment/PayWithPi";
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
@@ -46,6 +46,31 @@ const Cart = () => {
   const clearCart = () => {
     dispatch(CLEAR_CART());
     toast.info('Cart cleared', { position: "bottom-right" });
+  };
+
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+    
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      toast.error("Network error. Payment will be processed when connection is restored.", {
+        position: "bottom-right",
+        autoClose: 5000
+      });
+      
+      // Sauvegarde locale de la commande
+      const pendingOrder = {
+        items: cartItems,
+        total: cartTotalAmount,
+        orderId: `CMD-${Date.now()}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+    } else {
+      toast.error(`Payment failed: ${error.message}`, {
+        position: "bottom-right"
+      });
+    }
   };
 
   useEffect(() => {
@@ -141,7 +166,6 @@ const Cart = () => {
               <span>{currency} {cartTotalAmount.toFixed(2)}</span>
             </div>
 
-            {/* BOUTON QUI OUVRE LE PAIEMENT PI */}
             <button
               className={styles.checkoutButton}
               onClick={() => setShowPiPayment(true)}
@@ -172,10 +196,14 @@ const Cart = () => {
               amountPi={cartTotalAmount}
               memo={`Order ${orderId} – EtraliShop`}
               onSuccess={(paymentId) => {
-                toast.success(`Payment successful ! ID=${paymentId}`);
+                toast.success(`Payment successful! ID=${paymentId}`, {
+                  position: "bottom-right"
+                });
                 setShowPiPayment(false);
-                // vider le panier ou rediriger ici si tu veux
+                dispatch(CLEAR_CART());
+                localStorage.removeItem('pendingOrder');
               }}
+              onError={handlePaymentError}
             />
           </div>
         </div>

@@ -1,53 +1,51 @@
 // Remplacez votre index.js par :
 
-import { onCall } from "firebase-functions/v2/https";
+// 1. Imports
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { PiNetwork } from "@pi-network/pi-nodejs";
 import { defineSecret } from "firebase-functions/params";
+import axios from "axios";
 
+// 2. Init Firebase
 initializeApp();
 const db = getFirestore();
-const piKey = defineSecret("PI_API_KEY");
 
-// Initialisation différée de PiNetwork
-let pi;
-const getPi = () => {
-  if (!pi && piKey.value()) {
-    pi = new PiNetwork(piKey.value());
-  }
-  return pi;
-};
+// 3. Secret
+const PI_API_KEY = defineSecret("PI_API_KEY");
 
+// 4. Client REST Pi Network
+const pi = axios.create({
+  baseURL: "https://api.minepi.com/v2",
+  timeout: 10000
+});
+
+// 5. Helper : headers avec clé
+const piHeaders = (key) => ({
+  "Content-Type": "application/json",
+  "Authorization": `Key ${key}`
+});
+
+// ===============  CREATE PAYMENT  ===============
 export const createPiPayment = onCall(
-  { 
-    secrets: [piKey], 
-    region: "us-central1",
-    cors: true // Active CORS
-  },
+  { secrets: [PI_API_KEY], region: "us-central1", cors: true },
   async (request) => {
+    const { amount, memo, orderId } = request.data;
+
+    if (typeof amount !== "number" || amount <= 0 || !memo || !orderId) {
+      throw new HttpsError("invalid-argument", "amount, memo et orderId requis");
+    }
+
     try {
-      const { amount, memo, orderId } = request.data;
-      
-      if (!amount || !memo || !orderId) {
-        throw new Error("Missing required fields: amount, memo, orderId");
-      }
+      // appel serveur → serveur
+      const { data } = await pi.post(
+        "/payments",
+        { amount, memo, metadata: { orderId } },
+        { headers: piHeaders(PI_API_KEY.value()) }
+      );
 
-      const piInstance = getPi();
-      if (!piInstance) {
-        throw new Error("Pi Network not initialized");
-      }
-
-      const paymentData = { 
-        amount, 
-        memo, 
-        metadata: { orderId },
-        orderId 
-      };
-      
-      const { paymentId, tx_url } = await piInstance.createPayment(paymentData);
-
-      await db.collection("pi_payments").doc(paymentId).set({
+      // on stocke
+      await db.collection("pi_payments").doc(data.identifier).set({
         orderId,
         amount,
         memo,
@@ -55,51 +53,42 @@ export const createPiPayment = onCall(
         createdAt: new Date()
       });
 
-      return { paymentId, tx_url };
-      
-    } catch (error) {
-      console.error("Create payment error:", error);
-      throw new Error(`Failed to create payment: ${error.message}`);
+      return { paymentId: data.identifier, tx_url: data.transaction_url };
+    } catch (err) {
+      console.error("createPiPayment > axios error :", err.response?.data || err.message);
+      throw new HttpsError("internal", "Impossible de créer le paiement");
     }
   }
 );
 
+// ===============  VERIFY PAYMENT  ===============
 export const verifyPiPayment = onCall(
-  { 
-    secrets: [piKey], 
-    region: "us-central1",
-    cors: true
-  },
+  { secrets: [PI_API_KEY], region: "us-central1", cors: true },
   async (request) => {
+    const { paymentId, orderId } = request.data;
+    if (!paymentId || !orderId) {
+      throw new HttpsError("invalid-argument", "paymentId et orderId requis");
+    }
+
     try {
-      const { paymentId, orderId } = request.data;
-      
-      if (!paymentId || !orderId) {
-        throw new Error("Missing paymentId or orderId");
+      const { data } = await pi.get(
+        `/payments/${paymentId}`,
+        { headers: piHeaders(PI_API_KEY.value()) }
+      );
+
+      // Le paiement est-il finalisé ?
+      const ok = data.status === "completed" && data.transaction?.txid;
+      if (ok) {
+        await db.collection("pi_payments").doc(paymentId).update({
+          status: "paid",
+          completedAt: new Date(),
+          transaction: data.transaction
+        });
       }
-
-      const piInstance = getPi();
-      if (!piInstance) {
-        throw new Error("Pi Network not initialized");
-      }
-
-      const payment = await piInstance.getPayment(paymentId);
-      
-      if (!payment?.transaction) {
-        return { ok: false, reason: "No transaction found" };
-      }
-
-      await db.collection("pi_payments").doc(paymentId).update({
-        status: "paid",
-        completedAt: new Date(),
-        transaction: payment.transaction
-      });
-
-      return { ok: true };
-      
-    } catch (error) {
-      console.error("Verify payment error:", error);
-      return { ok: false, reason: error.message };
+      return { ok };
+    } catch (err) {
+      console.error("verifyPiPayment > axios error :", err.response?.data || err.message);
+      return { ok: false };
     }
   }
 );
