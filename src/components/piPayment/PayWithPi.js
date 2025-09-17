@@ -20,20 +20,35 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
 
   const Pi = window.Pi;
 
+  // gestionnaire des paiements incomplétus (obligatoire)
+  const onIncompletePaymentFound = (payment) => {
+    console.warn("Paiement incomplet trouvé :", payment);
+    // vous pouvez rediriger ou finaliser ici
+  };
+
   const payer = async () => {
     setErreur(null);
     setLoading(true);
 
     try {
+      // 1. Authentification Pi Network → on récupère user.uid
+      const auth = await Pi.authenticate(['payments'], onIncompletePaymentFound);
+      const piUid = auth.user.uid; // ← UID Pi Network
+
       const orderId = `order_${Date.now()}`;
 
-      // 1. Créer la facture côté serveur
+      // 2. Créer la facture côté serveur
       const createRes = await fetch(
         "https://us-central1-ecomm-f0ae6.cloudfunctions.net/createPiPayment",
         {
-          method : "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body   : JSON.stringify({ amount: Number(amountPi), memo, orderId })
+          body: JSON.stringify({
+            amount: Number(amountPi),
+            memo,
+            orderId,
+            piUid // ← on envoie l’UID Pi
+          })
         }
       );
 
@@ -44,16 +59,16 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
 
       const { paymentId, tx_url } = await createRes.json();
 
-      // 2. Signer la transaction dans Pi Browser
+      // 3. Signer la transaction dans Pi Browser
       await Pi.createPayment(tx_url);
 
-      // 3. Vérification
+      // 4. Vérification
       const verifRes = await fetch(
         "https://us-central1-ecomm-f0ae6.cloudfunctions.net/verifyPiPayment",
         {
-          method : "POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body   : JSON.stringify({ paymentId, orderId })
+          body: JSON.stringify({ paymentId, orderId })
         }
       );
       const { ok } = await verifRes.json();
