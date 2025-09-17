@@ -1,55 +1,55 @@
-// Remplacez votre index.js par :
-
-// 1. Imports
+// functions/index.js  (ES modules)
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { defineSecret } from "firebase-functions/params";
 import axios from "axios";
 
-// 2. Init Firebase
 initializeApp();
 const db = getFirestore();
-
-// 3. Secret
 const PI_API_KEY = defineSecret("PI_API_KEY");
 
-// 4. Client REST Pi Network
 const pi = axios.create({
   baseURL: "https://api.minepi.com/v2",
-  timeout: 10000
+  timeout: 15000
 });
 
-// 5. Helper : headers avec clé
 const piHeaders = (key) => ({
   "Content-Type": "application/json",
-  "Authorization": `Key ${key}`
+  Authorization: `Key ${key}`
 });
 
+/* ==========  CREATE PAYMENT  ========== */
 export const createPiPayment = onCall(
   { secrets: [PI_API_KEY], region: "us-central1", cors: true },
   async (request) => {
     const { amount, memo, orderId } = request.data;
+
     if (typeof amount !== "number" || amount <= 0 || !memo || !orderId)
       throw new HttpsError("invalid-argument", "amount, memo, orderId required");
 
+    // construction corps officiel
     const payload = {
-  amount: amount.toString(), // ← convertir en string
-  memo,
-  metadata: { orderId },
-  uid: ""
-};
+      amount: Number(amount).toFixed(5).toString(), // 5 décimales + string
+      memo: memo.slice(0, 50), // 50 car max
+      metadata: { orderId },
+      uid: "" // même vide = obligatoire
+    };
+
+    // ➜  LOGS BRUTS
+    console.log(">>> RAW Pi request body", JSON.stringify(payload, null, 2));
+    console.log(">>> RAW headers", JSON.stringify(piHeaders(PI_API_KEY.value()), null, 2));
 
     try {
-      console.log(">>> Pi payload", JSON.stringify(payload));   // ← log
       const { data } = await pi.post("/payments", payload, {
         headers: piHeaders(PI_API_KEY.value())
       });
-      console.log("<<< Pi response", JSON.stringify(data));      // ← log
+
+      console.log("<<< Pi response", JSON.stringify(data, null, 2));
 
       await db.collection("pi_payments").doc(data.identifier).set({
         orderId,
-        amount,
+        amount: payload.amount,
         memo,
         status: "pending",
         createdAt: new Date()
@@ -57,10 +57,37 @@ export const createPiPayment = onCall(
 
       return { paymentId: data.identifier, tx_url: data.transaction_url };
     } catch (err) {
-      // on renvoie le vrai message de Pi au front
-      const reply = err.response?.data || err.message;
-      console.error("!!! Pi API error", JSON.stringify(reply));  // ← log
-      throw new HttpsError("internal", JSON.stringify(reply));
+      const details = err.response?.data || err.message;
+      console.error("!!! Pi API error", JSON.stringify(details, null, 2));
+      throw new HttpsError("internal", JSON.stringify(details));
+    }
+  }
+);
+
+/* ==========  VERIFY PAYMENT  ========== */
+export const verifyPiPayment = onCall(
+  { secrets: [PI_API_KEY], region: "us-central1", cors: true },
+  async (request) => {
+    const { paymentId, orderId } = request.data;
+    if (!paymentId || !orderId)
+      throw new HttpsError("invalid-argument", "paymentId & orderId required");
+
+    try {
+      const { data } = await pi.get(`/payments/${paymentId}`, {
+        headers: piHeaders(PI_API_KEY.value())
+      });
+      const ok = data.status === "completed" && data.transaction?.txid;
+      if (ok) {
+        await db.collection("pi_payments").doc(paymentId).update({
+          status: "paid",
+          completedAt: new Date(),
+          transaction: data.transaction
+        });
+      }
+      return { ok };
+    } catch (err) {
+      console.error("verifyPiPayment >", err.response?.data || err.message);
+      return { ok: false };
     }
   }
 );
