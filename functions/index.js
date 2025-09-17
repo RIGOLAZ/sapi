@@ -23,6 +23,7 @@ const piHeaders = (key) => ({
 export const createPiPayment = onCall(
   { secrets: [PI_API_KEY], region: "us-central1", cors: true },
   async (request) => {
+    console.log(">>> FUNCTION ENTERED", JSON.stringify(request.data));
     const { amount, memo, orderId } = request.data;
 
     if (typeof amount !== "number" || amount <= 0 || !memo || !orderId)
