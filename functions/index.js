@@ -10,7 +10,7 @@ const db = getFirestore();
 const PI_API_KEY = defineSecret("PI_API_KEY");
 
 const pi = axios.create({
-  baseURL: "https://api.minepi.com/v2", // ✅ sans espace
+  baseURL: "https://api.minepi.com/v2",
   timeout: 15000
 });
 
@@ -29,12 +29,15 @@ export const createPiPayment = onCall(
     if (typeof amount !== "number" || amount <= 0 || !memo || !orderId || !piUid)
       throw new HttpsError("invalid-argument", "amount, memo, orderId, piUid required");
 
+    // LOG de contrôle
+    console.log(">>> piUid reçu :", piUid);
+
     // construction corps officiel
     const payload = {
       amount: Number(amount).toFixed(5).toString(), // 5 décimales + string
       memo: memo.slice(0, 50), // 50 car max
       metadata: { orderId },
-      uid: piUid // ← UID Pi Network (pas Firebase Auth)
+      uid: piUid // ← UID Pi Network
     };
 
     // ➜  LOGS BRUTS

@@ -9,7 +9,6 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
   const [piReady, setPiReady] = useState(false);
 
   useEffect(() => {
-    // attend que Pi SDK soit chargé
     const t = setInterval(() => {
       if (window.Pi) { clearInterval(t); setPiReady(true); }
     }, 200);
@@ -20,10 +19,8 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
 
   const Pi = window.Pi;
 
-  // gestionnaire des paiements incomplétus (obligatoire)
   const onIncompletePaymentFound = (payment) => {
     console.warn("Paiement incomplet trouvé :", payment);
-    // vous pouvez rediriger ou finaliser ici
   };
 
   const payer = async () => {
@@ -31,13 +28,12 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
     setLoading(true);
 
     try {
-      // 1. Authentification Pi Network → on récupère user.uid
       const auth = await Pi.authenticate(['payments'], onIncompletePaymentFound);
-      const piUid = auth.user.uid; // ← UID Pi Network
+      const piUid = auth.user.uid;
+      console.log(">>> Pi UID obtenu :", piUid);
 
       const orderId = `order_${Date.now()}`;
 
-      // 2. Créer la facture côté serveur
       const createRes = await fetch(
         "https://us-central1-ecomm-f0ae6.cloudfunctions.net/createPiPayment",
         {
@@ -47,7 +43,7 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
             amount: Number(amountPi),
             memo,
             orderId,
-            piUid // ← on envoie l’UID Pi
+            piUid
           })
         }
       );
@@ -59,10 +55,8 @@ export default function PayWithPi({ amountPi, memo, onSuccess }) {
 
       const { paymentId, tx_url } = await createRes.json();
 
-      // 3. Signer la transaction dans Pi Browser
       await Pi.createPayment(tx_url);
 
-      // 4. Vérification
       const verifRes = await fetch(
         "https://us-central1-ecomm-f0ae6.cloudfunctions.net/verifyPiPayment",
         {
