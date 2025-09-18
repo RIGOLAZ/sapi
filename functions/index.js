@@ -1,15 +1,25 @@
-// firebase/functions/index.js
+// Importations des fonctions Cloud Functions
+import { onCall } from 'firebase-functions/v2/https';
 
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const fetch = require('node-fetch');
+// Importations modulaires du SDK Admin
+import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-admin.initializeApp();
+// Autres importations
+import fetch from 'node-fetch'; // Assurez-vous d'utiliser une version compatible avec ESM, ou Node.js 18+
+
+// Initialisation de l'application Firebase Admin
+initializeApp();
+
+// Obtenir des instances modulaires des services
+const auth = getAuth();
+const firestore = getFirestore();
 
 // --- Fonction pour traiter un paiement Pi et authentifier l'utilisateur ---
-exports.processPiPaymentAndAuth = functions.https.onCall(async (data, context) => {
+export const processPiPaymentAndAuth = onCall(async (data, context) => {
     const { transactionId, piUserUid, orderId, cartItems } = data;
-    const piApiKey = functions.config().pi.apikey;
+    const piApiKey = functions.config().pi.apikey; // Assurez-vous que pi.apikey est correctement configuré via firebase functions:config:set
 
     if (!piApiKey) {
         throw new functions.https.HttpsError('internal', 'Missing Pi API key.');
@@ -31,23 +41,23 @@ exports.processPiPaymentAndAuth = functions.https.onCall(async (data, context) =
         // 2. Authentifier/Créer l'utilisateur Firebase avec l'UID Pi
         const firebaseUid = piUserUid;
         try {
-            await admin.auth().getUser(firebaseUid);
+            await auth.getUser(firebaseUid);
         } catch (error) {
-            await admin.auth().createUser({ uid: firebaseUid });
+            await auth.createUser({ uid: firebaseUid });
         }
 
         // 3. Créer la commande dans Firestore
-        await admin.firestore().collection('orders').doc(orderId).set({
+        await firestore.collection('orders').doc(orderId).set({
             userId: firebaseUid,
             items: cartItems,
             totalPrice: transactionDetails.amount,
             status: 'paid',
             piTransactionId: transactionId,
-            paidAt: admin.firestore.FieldValue.serverTimestamp(),
+            paidAt: Timestamp.now(),
         });
 
         // 4. Générer le Custom Token Firebase
-        const customToken = await admin.auth().createCustomToken(firebaseUid);
+        const customToken = await auth.createCustomToken(firebaseUid);
 
         return { customToken, firebaseUid, orderId, transactionDetails };
     } catch (error) {
@@ -57,10 +67,10 @@ exports.processPiPaymentAndAuth = functions.https.onCall(async (data, context) =
 });
 
 // --- Fonction pour attribuer le rôle d'administrateur ---
-exports.setAdminRole = functions.https.onCall(async (data, context) => {
+export const setAdminRole = onCall(async (data, context) => {
     if (!context.auth || context.auth.token.admin !== true) {
         throw new functions.https.HttpsError('permission-denied', 'Only admins can set roles.');
     }
-    await admin.auth().setCustomUserClaims(data.uid, { admin: true });
+    await auth.setCustomUserClaims(data.uid, { admin: true });
     return { message: `User ${data.uid} is now an admin.` };
 });

@@ -21,7 +21,7 @@ import {
 import { initiatePiPayment } from '../../lib/PiPayment'; // La fonction de paiement Pi
 import styles from './Cart.module.css'; // Votre fichier SCSS pour les styles
 
-const currency = "$"; // Ou votre devise locale
+const currency = "Pi";
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
