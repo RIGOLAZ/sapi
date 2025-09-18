@@ -17,12 +17,13 @@ export const initiatePiPayment = async (amount, cartItems) => {
     try {
         const Pi = window.Pi;
         if (!Pi) {
+            alert("Erreur: Pi SDK non chargé.");
             throw new Error("Pi SDK not available. Please ensure it is loaded inside the Pi Browser.");
         }
 
-        console.log("1. Appel de Pi.authenticate...");
+        alert("1. Appel de Pi.authenticate...");
         const authResult = await Pi.authenticate(['username']);
-        console.log("2. Authentification Pi réussie.", authResult);
+        alert("2. Authentification Pi réussie.", authResult);
         const piUserUid = authResult.user.uid;
 
         const orderId = `${piUserUid}-${new Date().getTime()}`;
@@ -51,6 +52,7 @@ export const initiatePiPayment = async (amount, cartItems) => {
 
         return verificationResult.data;
     } catch (error) {
+                alert("Erreur PiPayment: " + error.message);
         console.error("Erreur complète du processus Pi/Firebase:", error);
         throw error;
     }
