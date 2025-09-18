@@ -15,12 +15,8 @@ const PI_WALLET_ADDRESS = "GDA8WJ3N4X3K5B6M7P8R9S0T1U2V3W4X5Y6Z7A8B9C0D1E2F3G4H"
 
 const PiPaymentOptions = ({ amount, cartItems, onClose, onPaymentSuccess, onPaymentError }) => {
   const [loadingPayment, setLoadingPayment] = useState(false);
-  const [piPaymentUrl, setPiPaymentUrl] = useState(''); // Pour stocker l'URL du paiement Pi pour le QR Code
+  const [piPaymentUrl, setPiPaymentUrl] = useState('');
 
-  // Simule la génération de l'URL de paiement Pi pour le QR code
-  // Note: Le SDK Pi gère l'ouverture de l'interface native.
-  // Ce QR code serait pour un paiement "hors-bande" ou un lien direct si Pi supportait cela.
-  // Pour un paiement direct via le SDK (le plus recommandé), on appelle initiatePiPayment.
   useEffect(() => {
     // Ceci est une URL illustrative. L'API Pi ne fournit pas directement une URL de paiement externe
     // que vous pouvez encoder dans un QR code pour être scanné par n'importe quel lecteur.

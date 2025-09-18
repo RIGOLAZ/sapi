@@ -35,7 +35,7 @@ export const initiatePiPayment = async (amount, cartItems) => {
                 items: cartItems
             }
         };
-
+        console.log("Objet Pi:", Pi);
         console.log("3. Appel de Pi.createPayment avec les données :", paymentData);
         const paymentResult = await Pi.createPayment(paymentData);
         console.log("4. Paiement Pi créé. Résultat :", paymentResult);
