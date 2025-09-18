@@ -1,97 +1,66 @@
-// functions/index.js  (ES modules)
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import { defineSecret } from "firebase-functions/params";
-import axios from "axios";
+// firebase/functions/index.js
 
-initializeApp();
-const db = getFirestore();
-const PI_API_KEY = defineSecret("PI_API_KEY");
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const fetch = require('node-fetch');
 
-const pi = axios.create({
-  baseURL: "https://api.minepi.com/v2",
-  timeout: 15000
-});
+admin.initializeApp();
 
-const piHeaders = (key) => ({
-  "Content-Type": "application/json",
-  Authorization: `Key ${key}`
-});
+// --- Fonction pour traiter un paiement Pi et authentifier l'utilisateur ---
+exports.processPiPaymentAndAuth = functions.https.onCall(async (data, context) => {
+    const { transactionId, piUserUid, orderId, cartItems } = data;
+    const piApiKey = functions.config().pi.apikey;
 
-/* ==========  CREATE PAYMENT  ========== */
-export const createPiPayment = onCall(
-  { secrets: [PI_API_KEY], region: "us-central1", cors: true },
-  async (request) => {
-    console.log(">>> FUNCTION ENTERED", JSON.stringify(request.data));
-
-    const { amount, memo, orderId, piUid } = request.data;
-    if (typeof amount !== "number" || amount <= 0 || !memo || !orderId || !piUid)
-      throw new HttpsError("invalid-argument", "amount, memo, orderId, piUid required");
-
-    // LOG de contrôle
-    console.log(">>> piUid reçu :", piUid);
-
-    // construction corps officiel
-    const payload = {
-      amount: Number(amount).toFixed(5).toString(), // 5 décimales + string
-      memo: memo.slice(0, 50), // 50 car max
-      metadata: { orderId },
-      uid: piUid // ← UID Pi Network
-    };
-
-    // ➜  LOGS BRUTS
-    console.log(">>> RAW Pi request body", JSON.stringify(payload, null, 2));
-    console.log(">>> RAW headers", JSON.stringify(piHeaders(PI_API_KEY.value()), null, 2));
-
-    try {
-      const { data } = await pi.post("/payments", payload, {
-        headers: piHeaders(PI_API_KEY.value())
-      });
-
-      console.log("<<< Pi response", JSON.stringify(data, null, 2));
-
-      await db.collection("pi_payments").doc(data.identifier).set({
-        orderId,
-        amount: payload.amount,
-        memo,
-        status: "pending",
-        createdAt: new Date()
-      });
-
-      return { paymentId: data.identifier, tx_url: data.transaction_url };
-    } catch (err) {
-      const details = err.response?.data || err.message;
-      console.error("!!! Pi API error", JSON.stringify(details, null, 2));
-      throw new HttpsError("internal", JSON.stringify(details));
+    if (!piApiKey) {
+        throw new functions.https.HttpsError('internal', 'Missing Pi API key.');
     }
-  }
-);
-
-/* ==========  VERIFY PAYMENT  ========== */
-export const verifyPiPayment = onCall(
-  { secrets: [PI_API_KEY], region: "us-central1", cors: true },
-  async (request) => {
-    const { paymentId, orderId } = request.data;
-    if (!paymentId || !orderId)
-      throw new HttpsError("invalid-argument", "paymentId & orderId required");
 
     try {
-      const { data } = await pi.get(`/payments/${paymentId}`, {
-        headers: piHeaders(PI_API_KEY.value())
-      });
-      const ok = data.status === "completed" && data.transaction?.txid;
-      if (ok) {
-        await db.collection("pi_payments").doc(paymentId).update({
-          status: "paid",
-          completedAt: new Date(),
-          transaction: data.transaction
+        // 1. Vérifier la transaction Pi auprès de l'API Pi
+        const piTransactionResponse = await fetch(`https://api.minepi.com/v2/payments/${transactionId}`, {
+            headers: { 'Authorization': `Key ${piApiKey}` }
         });
-      }
-      return { ok };
-    } catch (err) {
-      console.error("verifyPiPayment >", err.response?.data || err.message);
-      return { ok: false };
+        if (!piTransactionResponse.ok) {
+            throw new functions.https.HttpsError('unauthenticated', 'Invalid Pi transaction.');
+        }
+        const transactionDetails = await piTransactionResponse.json();
+        if (transactionDetails.status !== 'succeeded' || transactionDetails.user_uid !== piUserUid) {
+            throw new functions.https.HttpsError('failed-precondition', 'Transaction failed or user mismatch.');
+        }
+
+        // 2. Authentifier/Créer l'utilisateur Firebase avec l'UID Pi
+        const firebaseUid = piUserUid;
+        try {
+            await admin.auth().getUser(firebaseUid);
+        } catch (error) {
+            await admin.auth().createUser({ uid: firebaseUid });
+        }
+
+        // 3. Créer la commande dans Firestore
+        await admin.firestore().collection('orders').doc(orderId).set({
+            userId: firebaseUid,
+            items: cartItems,
+            totalPrice: transactionDetails.amount,
+            status: 'paid',
+            piTransactionId: transactionId,
+            paidAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // 4. Générer le Custom Token Firebase
+        const customToken = await admin.auth().createCustomToken(firebaseUid);
+
+        return { customToken, firebaseUid, orderId, transactionDetails };
+    } catch (error) {
+        console.error("Erreur de la Cloud Function:", error);
+        throw new functions.https.HttpsError('internal', 'Erreur interne du serveur.', error.message);
     }
-  }
-);
+});
+
+// --- Fonction pour attribuer le rôle d'administrateur ---
+exports.setAdminRole = functions.https.onCall(async (data, context) => {
+    if (!context.auth || context.auth.token.admin !== true) {
+        throw new functions.https.HttpsError('permission-denied', 'Only admins can set roles.');
+    }
+    await admin.auth().setCustomUserClaims(data.uid, { admin: true });
+    return { message: `User ${data.uid} is now an admin.` };
+});

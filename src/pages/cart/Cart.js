@@ -1,32 +1,36 @@
 // src/pages/cart/Cart.js
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaShoppingBag, FaTrashAlt, FaMinus, FaPlus, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { currency } from "..";
+
+// Importer vos actions Redux
 import {
   ADD_TO_CART,
-  CALCULATE_SUBTOTAL,
-  CALCULATE_TOTAL_QUANTITY,
-  CLEAR_CART,
   DECREASE_CART,
   REMOVE_FROM_CART,
-  SAVE_URL,
+  CLEAR_CART,
+  CALCULATE_SUBTOTAL,
+  CALCULATE_TOTAL_QUANTITY,
   selectCartItems,
   selectCartTotalAmount,
-  selectCartTotalQuantity,
-} from "../../redux/slice/cartSlice";
-import styles from "./Cart.module.css";
-import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import PayWithPi from "../../components/piPayment/PayWithPi";
+  selectCartTotalQuantity
+} from '../../redux/slice/cartSlice';
+// import { SAVE_URL } from '../../redux/slice/authSlice'; // Assurez-vous que cette action est bien définie
+import { initiatePiPayment } from '../../lib/PiPayment'; // La fonction de paiement Pi
+import styles from './Cart.module.css'; // Votre fichier SCSS pour les styles
+
+const currency = "$"; // Ou votre devise locale
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [showPiPayment, setShowPiPayment] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
 
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
@@ -48,35 +52,55 @@ const Cart = () => {
     toast.info('Cart cleared', { position: "bottom-right" });
   };
 
-  const handlePaymentError = (error) => {
-    console.error("Payment error:", error);
-    
-    if (error.message.includes('fetch') || error.message.includes('network')) {
-      toast.error("Network error. Payment will be processed when connection is restored.", {
-        position: "bottom-right",
-        autoClose: 5000
-      });
+  const handlePiPayment = async () => {
+    if (cartItems.length === 0) {
+      toast.error("Votre panier est vide.", { position: "bottom-right" });
+      return;
+    }
+
+    setLoadingPayment(true);
+    toast.info("Lancement du paiement Pi...", { position: "bottom-right" });
+
+    const totalPiAmount = cartTotalAmount;
+    const pendingOrder = {
+      items: cartItems,
+      total: totalPiAmount,
+    };
+
+    try {
+      // Appel de la fonction qui gère le paiement et l'authentification
+      await initiatePiPayment(totalPiAmount, pendingOrder.items);
+
+      // Si le paiement réussit, vider le panier et rediriger
+      dispatch(CLEAR_CART());
+      localStorage.removeItem('pendingOrder');
+      toast.success("Paiement réussi !", { position: "bottom-right" });
+      navigate('/confirmation');
+    } catch (error) {
+      console.error("Erreur de paiement Pi:", error);
       
-      // Sauvegarde locale de la commande
-      const pendingOrder = {
-        items: cartItems,
-        total: cartTotalAmount,
-        orderId: `CMD-${Date.now()}`,
-        timestamp: new Date().toISOString()
-      };
-      
-      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
-    } else {
-      toast.error(`Payment failed: ${error.message}`, {
-        position: "bottom-right"
-      });
+      // Gérer les erreurs spécifiques
+      const errorMessage = error.message;
+      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        toast.error("Erreur réseau. Le paiement sera traité à la prochaine connexion.", {
+          position: "bottom-right",
+          autoClose: 5000
+        });
+        localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+      } else {
+        toast.error(`Paiement échoué: ${errorMessage}`, {
+          position: "bottom-right"
+        });
+      }
+    } finally {
+      setLoadingPayment(false);
     }
   };
 
   useEffect(() => {
     dispatch(CALCULATE_SUBTOTAL());
     dispatch(CALCULATE_TOTAL_QUANTITY());
-    dispatch(SAVE_URL(""));
+    // dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
 
   if (cartItems.length === 0) {
@@ -91,8 +115,6 @@ const Cart = () => {
       </div>
     );
   }
-
-  const orderId = `CMD-${Date.now()}`;
 
   return (
     <div className={styles.cartContainer}>
@@ -168,9 +190,10 @@ const Cart = () => {
 
             <button
               className={styles.checkoutButton}
-              onClick={() => setShowPiPayment(true)}
+              onClick={handlePiPayment} // Appel de la nouvelle fonction
+              disabled={loadingPayment || cartItems.length === 0}
             >
-              Pay {cartTotalAmount.toFixed(2)} Pi
+              {loadingPayment ? 'Paiement en cours...' : `Payer ${cartTotalAmount.toFixed(2)} Pi`}
             </button>
 
             <div className={styles.securityNote}>
@@ -183,31 +206,6 @@ const Cart = () => {
           </Link>
         </div>
       </div>
-
-      {/* MODAL CONDITIONNEL : PayWithPi */}
-      {showPiPayment && (
-        <div className={styles.modalOverlay} onClick={() => setShowPiPayment(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.closeButton} onClick={() => setShowPiPayment(false)}>
-              <FaTimes />
-            </button>
-
-            <PayWithPi
-              amountPi={cartTotalAmount}
-              memo={`Order ${orderId} – EtraliShop`}
-              onSuccess={(paymentId) => {
-                toast.success(`Payment successful! ID=${paymentId}`, {
-                  position: "bottom-right"
-                });
-                setShowPiPayment(false);
-                dispatch(CLEAR_CART());
-                localStorage.removeItem('pendingOrder');
-              }}
-              onError={handlePaymentError}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
