@@ -1,0 +1,148 @@
+/* src/components/PiPaymentOptions/PiPaymentOptions.module.scss */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #333;
+  &:hover {
+    color: #e74c3c;
+  }
+}
+
+h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.paymentOption {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+    svg {
+      color: #3498db;
+    }
+  }
+  p {
+    color: #555;
+    line-height: 1.6;
+  }
+}
+
+.actionButton {
+  background-color: #3498db;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  &:hover:not(:disabled) {
+    background-color: #2980b9;
+  }
+  &:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+}
+
+.walletAddressContainer {
+  display: flex;
+  align-items: center;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  padding: 0.8rem;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #333;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.walletAddress {
+  flex-grow: 1;
+  word-break: break-all;
+}
+
+.copyButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  &:hover {
+    background-color: #218838;
+  }
+}
+
+.qrCodeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  img { // Style pour l'image du QR code générée par la lib
+    border: 1px solid #ddd;
+    padding: 5px;
+    background-color: white;
+  }
+}
+
+.qrText {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.warningText {
+  font-size: 0.75rem;
+  color: #e67e22;
+  margin-top: 0.5rem;
+  display: block;
+}

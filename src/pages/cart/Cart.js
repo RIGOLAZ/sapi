@@ -1,5 +1,6 @@
-// src/pages/cart/Cart.js
-import React, { useEffect, useState } from 'react';
+// src/pages/Cart/Cart.js
+
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingBag, FaTrashAlt, FaMinus, FaPlus, FaTimes } from 'react-icons/fa';
@@ -17,9 +18,8 @@ import {
   selectCartTotalAmount,
   selectCartTotalQuantity
 } from '../../redux/slice/cartSlice';
-// import { SAVE_URL } from '../../redux/slice/authSlice'; // Assurez-vous que cette action est bien définie
 import { initiatePiPayment } from '../../lib/PiPayment'; // La fonction de paiement Pi
-import styles from './Cart.module.css'; // Votre fichier SCSS pour les styles
+import styles from './Cart.module.css';
 
 const currency = "Pi";
 
@@ -68,10 +68,8 @@ const Cart = () => {
     };
 
     try {
-      // Appel de la fonction qui gère le paiement et l'authentification
       await initiatePiPayment(totalPiAmount, pendingOrder.items);
 
-      // Si le paiement réussit, vider le panier et rediriger
       dispatch(CLEAR_CART());
       localStorage.removeItem('pendingOrder');
       toast.success("Paiement réussi !", { position: "bottom-right" });
@@ -79,7 +77,6 @@ const Cart = () => {
     } catch (error) {
       console.error("Erreur de paiement Pi:", error);
       
-      // Gérer les erreurs spécifiques
       const errorMessage = error.message;
       if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
         toast.error("Erreur réseau. Le paiement sera traité à la prochaine connexion.", {
@@ -100,7 +97,6 @@ const Cart = () => {
   useEffect(() => {
     dispatch(CALCULATE_SUBTOTAL());
     dispatch(CALCULATE_TOTAL_QUANTITY());
-    // dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
 
   if (cartItems.length === 0) {
@@ -190,7 +186,7 @@ const Cart = () => {
 
             <button
               className={styles.checkoutButton}
-              onClick={handlePiPayment} // Appel de la nouvelle fonction
+              onClick={handlePiPayment}
               disabled={loadingPayment || cartItems.length === 0}
             >
               {loadingPayment ? 'Paiement en cours...' : `Payer ${cartTotalAmount.toFixed(2)} Pi`}

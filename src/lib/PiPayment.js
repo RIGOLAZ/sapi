@@ -2,7 +2,7 @@
 
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import functions from '../firebase/config'; // Assurez-vous que le chemin vers votre fichier firebase.js est correct
+import { functions } from '../firebase/config'; // Assurez-vous que le chemin est correct
 
 const auth = getAuth();
 const processPiPaymentAndAuth = httpsCallable(functions, 'processPiPaymentAndAuth');
