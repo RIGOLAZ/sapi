@@ -18,6 +18,7 @@ import {
   selectCartTotalAmount,
   selectCartTotalQuantity
 } from '../../redux/slice/cartSlice';
+import { SAVE_URL } from '../../redux/slice/authSlice'; // Assurez-vous que cette action est bien définie
 import { initiatePiPayment } from '../../lib/PiPayment'; // La fonction de paiement Pi
 import styles from './Cart.module.css';
 
@@ -97,6 +98,7 @@ const Cart = () => {
   useEffect(() => {
     dispatch(CALCULATE_SUBTOTAL());
     dispatch(CALCULATE_TOTAL_QUANTITY());
+    dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
 
   if (cartItems.length === 0) {
