@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Importations des fonctions Cloud Functions
 import { onCall } from 'firebase-functions/v2/https';
 
@@ -11,6 +12,23 @@ import fetch from 'node-fetch'; // Assurez-vous d'utiliser une version compatibl
 
 // Initialisation de l'application Firebase Admin
 initializeApp();
+=======
+// functions/index.js  (CommonJS)
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const axios = require("axios");
+admin.initializeApp();
+const db = admin.firestore();
+
+const SANDBOX_URL = "https://sandbox.minepi.com/v2/payments";
+
+exports.createPiPayment = functions
+  .https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Login required");
+    const { orderId, amountPi, memo } = data;
+    if (!orderId || !amountPi || amountPi <= 0)
+      throw new functions.https.HttpsError("invalid-argument", "Bad args");
+>>>>>>> 353adfc (Reverse)
 
 // Obtenir des instances modulaires des services
 const auth = getAuth();
@@ -26,6 +44,7 @@ export const processPiPaymentAndAuth = onCall(async (data, context) => {
     }
 
     try {
+<<<<<<< HEAD
         // 1. Vérifier la transaction Pi auprès de l'API Pi
         const piTransactionResponse = await fetch(`https://api.minepi.com/v2/payments/${transactionId}`, {
             headers: { 'Authorization': `Key ${piApiKey}` }
@@ -63,9 +82,32 @@ export const processPiPaymentAndAuth = onCall(async (data, context) => {
     } catch (error) {
         console.error("Erreur de la Cloud Function:", error);
         throw new functions.https.HttpsError('internal', 'Erreur interne du serveur.', error.message);
+=======
+      const { data: res } = await axios.post(
+        SANDBOX_URL,
+        {
+          amount: amountMicro,
+          memo,
+          metadata: { orderId, uid: context.auth.uid },
+          redirect_url: `https://etralishop.com/shop/pi/success?orderId=${orderId}`,
+          cancel_url: `https://etralishop.com/shop/pi/cancel?orderId=${orderId}`
+        },
+        { headers: { Authorization: "Key sandbox" } }
+      );
+
+      await db.collection("users").doc(context.auth.uid)
+              .collection("orders").doc(orderId)
+              .update({ paymentId: res.identifier, status: "pending" });
+
+      return { paymentId: res.identifier, qrData: `pi://payment?paymentId=${res.identifier}` };
+    } catch (e) {
+      console.error(e.response?.data || e.message);
+      throw new functions.https.HttpsError("internal", "Sandbox error");
+>>>>>>> 353adfc (Reverse)
     }
 });
 
+<<<<<<< HEAD
 // --- Fonction pour attribuer le rôle d'administrateur ---
 export const setAdminRole = onCall(async (data, context) => {
     if (!context.auth || context.auth.token.admin !== true) {
@@ -74,3 +116,16 @@ export const setAdminRole = onCall(async (data, context) => {
     await auth.setCustomUserClaims(data.uid, { admin: true });
     return { message: `User ${data.uid} is now an admin.` };
 });
+=======
+// Webhook sandbox (pas signé)
+exports.piWebhook = functions.https.onRequest(async (req, res) => {
+  const { payment, event } = req.body;
+  if (event?.type === "payment_completed") {
+    const { orderId, uid } = payment.metadata;
+    await db.collection("users").doc(uid)
+            .collection("orders").doc(orderId)
+            .update({ status: "completed", txid: payment.transaction?.txid });
+  }
+  res.status(200).send("OK");
+});
+>>>>>>> 353adfc (Reverse)

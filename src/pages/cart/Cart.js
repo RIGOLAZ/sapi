@@ -1,9 +1,15 @@
+<<<<<<< HEAD
 // src/pages/Cart/Cart.js
 
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaShoppingBag, FaTrashAlt, FaMinus, FaPlus, FaTimes } from 'react-icons/fa';
+=======
+// src/pages/cart/Cart.js
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+>>>>>>> 353adfc (Reverse)
 import { toast } from 'react-toastify';
 
 // Importer vos actions Redux
@@ -16,6 +22,7 @@ import {
   CALCULATE_TOTAL_QUANTITY,
   selectCartItems,
   selectCartTotalAmount,
+<<<<<<< HEAD
   selectCartTotalQuantity
 } from '../../redux/slice/cartSlice';
 import { SAVE_URL } from '../../redux/slice/authSlice'; // Assurez-vous que cette action est bien définie
@@ -23,13 +30,24 @@ import { initiatePiPayment } from '../../lib/PiPayment'; // La fonction de paiem
 import styles from './Cart.module.css';
 
 const currency = "Pi";
+=======
+  selectCartTotalQuantity,
+} from "../../redux/slice/cartSlice";
+import styles from "./Cart.module.css";
+import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import PayWithPi from "../../components/piPayment/PayWithPi";
+>>>>>>> 353adfc (Reverse)
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
   const dispatch = useDispatch();
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+>>>>>>> 353adfc (Reverse)
 
   const [loadingPayment, setLoadingPayment] = useState(false);
 
@@ -53,6 +71,7 @@ const Cart = () => {
     toast.info('Cart cleared', { position: "bottom-right" });
   };
 
+<<<<<<< HEAD
   const handlePiPayment = async () => {
     if (cartItems.length === 0) {
       toast.error("Votre panier est vide.", { position: "bottom-right" });
@@ -92,6 +111,30 @@ const Cart = () => {
       }
     } finally {
       setLoadingPayment(false);
+=======
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+    
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      toast.error("Network error. Payment will be processed when connection is restored.", {
+        position: "bottom-right",
+        autoClose: 5000
+      });
+      
+      // Sauvegarde locale de la commande
+      const pendingOrder = {
+        items: cartItems,
+        total: cartTotalAmount,
+        orderId: `CMD-${Date.now()}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+    } else {
+      toast.error(`Payment failed: ${error.message}`, {
+        position: "bottom-right"
+      });
+>>>>>>> 353adfc (Reverse)
     }
   };
 
@@ -113,6 +156,8 @@ const Cart = () => {
       </div>
     );
   }
+
+  const orderId = `CMD-${Date.now()}`;
 
   return (
     <div className={styles.cartContainer}>
@@ -188,10 +233,16 @@ const Cart = () => {
 
             <button
               className={styles.checkoutButton}
+<<<<<<< HEAD
               onClick={handlePiPayment}
               disabled={loadingPayment || cartItems.length === 0}
             >
               {loadingPayment ? 'Paiement en cours...' : `Payer ${cartTotalAmount.toFixed(2)} Pi`}
+=======
+              onClick={() => setShowPiPayment(true)}
+            >
+              Pay {cartTotalAmount.toFixed(2)} Pi
+>>>>>>> 353adfc (Reverse)
             </button>
 
             <div className={styles.securityNote}>
@@ -204,6 +255,34 @@ const Cart = () => {
           </Link>
         </div>
       </div>
+<<<<<<< HEAD
+=======
+
+      {/* MODAL CONDITIONNEL : PayWithPi */}
+      {showPiPayment && (
+        <div className={styles.modalOverlay} onClick={() => setShowPiPayment(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.closeButton} onClick={() => setShowPiPayment(false)}>
+              <FaTimes />
+            </button>
+
+            <PayWithPi
+              amountPi={cartTotalAmount}
+              memo={`Order ${orderId} – EtraliShop`}
+              onSuccess={(paymentId) => {
+                toast.success(`Payment successful! ID=${paymentId}`, {
+                  position: "bottom-right"
+                });
+                setShowPiPayment(false);
+                dispatch(CLEAR_CART());
+                localStorage.removeItem('pendingOrder');
+              }}
+              onError={handlePaymentError}
+            />
+          </div>
+        </div>
+      )}
+>>>>>>> 353adfc (Reverse)
     </div>
   );
 };
