@@ -1,55 +1,32 @@
-<<<<<<< HEAD
-// src/pages/Cart/Cart.js
-
-import { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { FaShoppingBag, FaTrashAlt, FaMinus, FaPlus, FaTimes } from 'react-icons/fa';
-=======
 // src/pages/cart/Cart.js
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
->>>>>>> 353adfc (Reverse)
 import { toast } from 'react-toastify';
-
-// Importer vos actions Redux
+import { currency } from "..";
 import {
   ADD_TO_CART,
-  DECREASE_CART,
-  REMOVE_FROM_CART,
-  CLEAR_CART,
   CALCULATE_SUBTOTAL,
   CALCULATE_TOTAL_QUANTITY,
+  CLEAR_CART,
+  DECREASE_CART,
+  REMOVE_FROM_CART,
+  SAVE_URL,
   selectCartItems,
   selectCartTotalAmount,
-<<<<<<< HEAD
-  selectCartTotalQuantity
-} from '../../redux/slice/cartSlice';
-import { SAVE_URL } from '../../redux/slice/authSlice'; // Assurez-vous que cette action est bien définie
-import { initiatePiPayment } from '../../lib/PiPayment'; // La fonction de paiement Pi
-import styles from './Cart.module.css';
-
-const currency = "Pi";
-=======
   selectCartTotalQuantity,
 } from "../../redux/slice/cartSlice";
 import styles from "./Cart.module.css";
 import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import PayWithPi from "../../components/piPayment/PayWithPi";
->>>>>>> 353adfc (Reverse)
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
   const dispatch = useDispatch();
-<<<<<<< HEAD
-  const navigate = useNavigate();
-=======
->>>>>>> 353adfc (Reverse)
 
-  const [loadingPayment, setLoadingPayment] = useState(false);
+  const [showPiPayment, setShowPiPayment] = useState(false);
 
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
@@ -71,47 +48,6 @@ const Cart = () => {
     toast.info('Cart cleared', { position: "bottom-right" });
   };
 
-<<<<<<< HEAD
-  const handlePiPayment = async () => {
-    if (cartItems.length === 0) {
-      toast.error("Votre panier est vide.", { position: "bottom-right" });
-      return;
-    }
-
-    setLoadingPayment(true);
-    toast.info("Lancement du paiement Pi...", { position: "bottom-right" });
-
-    const totalPiAmount = cartTotalAmount;
-    const pendingOrder = {
-      items: cartItems,
-      total: totalPiAmount,
-    };
-
-    try {
-      await initiatePiPayment(totalPiAmount, pendingOrder.items);
-
-      dispatch(CLEAR_CART());
-      localStorage.removeItem('pendingOrder');
-      toast.success("Paiement réussi !", { position: "bottom-right" });
-      navigate('/confirmation');
-    } catch (error) {
-      console.error("Erreur de paiement Pi:", error);
-      
-      const errorMessage = error.message;
-      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
-        toast.error("Erreur réseau. Le paiement sera traité à la prochaine connexion.", {
-          position: "bottom-right",
-          autoClose: 5000
-        });
-        localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
-      } else {
-        toast.error(`Paiement échoué: ${errorMessage}`, {
-          position: "bottom-right"
-        });
-      }
-    } finally {
-      setLoadingPayment(false);
-=======
   const handlePaymentError = (error) => {
     console.error("Payment error:", error);
     
@@ -134,7 +70,6 @@ const Cart = () => {
       toast.error(`Payment failed: ${error.message}`, {
         position: "bottom-right"
       });
->>>>>>> 353adfc (Reverse)
     }
   };
 
@@ -233,16 +168,9 @@ const Cart = () => {
 
             <button
               className={styles.checkoutButton}
-<<<<<<< HEAD
-              onClick={handlePiPayment}
-              disabled={loadingPayment || cartItems.length === 0}
-            >
-              {loadingPayment ? 'Paiement en cours...' : `Payer ${cartTotalAmount.toFixed(2)} Pi`}
-=======
               onClick={() => setShowPiPayment(true)}
             >
               Pay {cartTotalAmount.toFixed(2)} Pi
->>>>>>> 353adfc (Reverse)
             </button>
 
             <div className={styles.securityNote}>
@@ -255,8 +183,6 @@ const Cart = () => {
           </Link>
         </div>
       </div>
-<<<<<<< HEAD
-=======
 
       {/* MODAL CONDITIONNEL : PayWithPi */}
       {showPiPayment && (
@@ -282,7 +208,6 @@ const Cart = () => {
           </div>
         </div>
       )}
->>>>>>> 353adfc (Reverse)
     </div>
   );
 };
