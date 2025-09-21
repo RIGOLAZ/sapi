@@ -1,8 +1,8 @@
 import { useState } from "react";
 import styles from "./auth.module.css";
-import loginImg from "../../assets/login.png";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../../components/card/Card";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -18,6 +18,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const previousURL = useSelector(selectPreviousURL);
   const navigate = useNavigate();
@@ -34,8 +35,7 @@ const Login = () => {
     setIsLoading(true);
 
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // const user = userCredential.user;
+      .then(() => {
         setIsLoading(false);
         toast.success("Login Successful...");
         redirectUser();
@@ -46,12 +46,10 @@ const Login = () => {
       });
   };
 
-  // Login with Gooogle
   const provider = new GoogleAuthProvider();
   const signInWithGoogle = () => {
     signInWithPopup(auth, provider)
-      .then((result) => {
-        // const user = result.user;
+      .then(() => {
         toast.success("Login Successfully");
         redirectUser();
       })
@@ -65,36 +63,55 @@ const Login = () => {
       {isLoading && <Loader />}
       <section className={`container ${styles.auth}`}>
         <Card>
-          <div class="background">
-            <div class="shape"></div>
-        </div>
+          <div className="background">
+            <div className="shape"></div>
+          </div>
           <div className={styles.form}>
             <h2>Login</h2>
 
             <form onSubmit={loginUser}>
               <input
-                type="text"
+                type="email"
                 placeholder="Email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <input
-                type="password"
-                placeholder="Password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+
+              <div className={styles.passwordWrapper}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <span
+                  className={styles.eyeIcon}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+
               <button type="submit" className="--btn --btn-primary --btn-block">
                 Login
               </button>
+
               <div className={styles.links}>
                 <Link to="/reset">Reset Password</Link>
               </div>
               <p>-- or --</p>
             </form>
-            <button className="--btn-2 --btn-block" id="google-connect" onClick={signInWithGoogle}><span>Login with Google</span></button>
+
+            <button
+              className="--btn-2 --btn-block"
+              id="google-connect"
+              onClick={signInWithGoogle}
+            >
+              <span>Login with Google</span>
+            </button>
+
             <span className={styles.register}>
               <p>Don't have an account? |</p>
               <Link to="/register">Register</Link>

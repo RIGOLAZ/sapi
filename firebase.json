@@ -2,7 +2,9 @@
   "functions": [
     {
       "source": "functions",
-      "dotenv": [".env"],
+      "dotenv": [
+        ".env"
+      ],
       "codebase": "default",
       "runtime": "nodejs20",
       "ignore": [
@@ -14,7 +16,7 @@
     }
   ],
   "hosting": {
-    "public": "build",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -22,30 +24,26 @@
     ],
     "rewrites": [
       {
-        "source": "/validation-key.txt",
-        "destination": "/validation-key.txt"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
   },
   "headers": [
-      {
-        "source": "validation-key.txt",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "text/plain; charset=utf-8"
-          },
-          {
-            "key": "X-Content-Type-Options",
-            "value": "nosniff"
-          }
-        ]
-      }
-    ],
+    {
+      "source": "validation-key.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ],
   "emulators": {
     "functions": {
       "port": 3000

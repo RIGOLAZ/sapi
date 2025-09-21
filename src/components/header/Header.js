@@ -23,7 +23,7 @@ const logo = (
   <div className={styles.logo}>
     <Link to="/">
       <h2>
-        etrali<span>Shop</span>.
+        Sa<span>Pi</span>.
       </h2>
     </Link>
     <div className={styles.piblock}>
