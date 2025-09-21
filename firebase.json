@@ -16,7 +16,8 @@
     }
   ],
   "hosting": {
-    "public": "public",
+    "site": "sapi",
+    "public": "build",
     "ignore": [
       "firebase.json",
       "**/.*",

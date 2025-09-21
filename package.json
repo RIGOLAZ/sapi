@@ -1,5 +1,5 @@
 {
-  "name": "ecomm",
+  "name": "sapi",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -58,16 +58,16 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "http://localhost:3000/",
+  "homepage": ".",
   "description": "This project was built by ETRALIS",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RIGOLAZ/eshop.git"
+    "url": "git+https://github.com/RIGOLAZ/sapi.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/RIGOLAZ/eshop/issues"
+    "url": "https://github.com/RIGOLAZ/sapi/issues"
   }
 }
