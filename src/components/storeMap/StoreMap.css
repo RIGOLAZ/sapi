@@ -1,0 +1,12 @@
+/* StoreMap.css */
+.map-wrap { margin: 2rem 0; }
+.leaflet-container { height: 60vh; border-radius: 8px; }
+
+/* StoreAdmin.css */
+.admin-form input, .admin-form textarea, .admin-form select { width: 100%; margin-bottom: 1rem; padding: 0.5rem; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.admin-table th, .admin-table td { padding: 0.5rem; border-bottom: 1px solid #ccc; }
+.btn-primary { background: #007bff; color: #fff; border: none; padding: 0.5rem 1rem; cursor: pointer; }
+.btn-secondary { background: #6c757d; color: #fff; border: none; padding: 0.5rem 1rem; cursor: pointer; margin-left: 0.5rem; }
+.btn-danger { background: #dc3545; color: #fff; border: none; padding: 0.3rem 0.6rem; cursor: pointer; }

@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import useFetchCollection from "../../../customHooks/useFetchCollection";
+import { currency } from "../../../pages";
 
 import {
   selectOrderHistory,
@@ -66,7 +67,7 @@ const Orders = () => {
                         </td>
                         <td>{id}</td>
                         <td>
-                          {"$"}
+                          {currency}
                           {orderAmount}
                         </td>
                         <td>

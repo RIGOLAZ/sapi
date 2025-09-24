@@ -12,16 +12,13 @@ const orderSlice = createSlice({
     STORE_ORDERS(state, action) {
       state.orderHistory = action.payload;
     },
-    CALC_TOTAL_ORDER_AMOUNT(state, action) {
-      const array = [];
-      state.orderHistory.map((item) => {
-        const { orderAmount } = item;
-        return array.push(orderAmount);
-      });
-      const totalAmount = array.reduce((a, b) => {
-        return a + b;
-      }, 0);
-      state.totalOrderAmount = totalAmount;
+    CALC_TOTAL_ORDER_AMOUNT: (state) => {
+  const rawTotal = state.orderHistory.reduce((sum, o) => {
+    // enlève π, espaces, $, garde uniquement chiffres et point
+    const str = (o.orderAmount || '0').toString().replace(/[^\d.]/g, '');
+    return sum + (Number(str) || 0);
+  }, 0);
+  state.totalOrderAmount = Number(rawTotal.toFixed(2));
     },
   },
 });

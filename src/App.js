@@ -13,6 +13,7 @@ import OrderDetails from "./pages/orderDetails/OrderDetails";
 import ReviewProducts from "./components/reviewProducts/ReviewProducts";
 import NotFound from "./pages/notFound/NotFound";
 import ProductDetails from "./components/product/productDetails/ProductDetails";
+import StoreMap from "./components/storeMap/StoreMap";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           }} />
           <Route path="/" element={<Home />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/stores" element={<StoreMap />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/reset" element={<Reset />} />

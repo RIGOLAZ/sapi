@@ -110,7 +110,7 @@ const Header = () => {
   return (
     <>
       <header>
-        <div className={styles.header}>
+        <di className={styles.header}>
           <HiOutlineMenuAlt3 className={styles["menu-icon"]} size={28} onClick={toggleMenu} />
           {logo}
 
@@ -149,6 +149,12 @@ const Header = () => {
                   Contact
                 </NavLink>
               </li>
+              <li>
+                <NavLink to="/stores" className={activeLink}>
+                  Boutiques Pi
+                </NavLink>
+              </li>
+              
             </ul>
             <div className={styles["header-right"]} onClick={hideMenu}>
               <span className={styles.links}>
@@ -180,7 +186,7 @@ const Header = () => {
           <div className={styles["menu-icon"]}>
             {cart}
           </div>
-        </div>
+        </di>
       </header>
     </>
   );

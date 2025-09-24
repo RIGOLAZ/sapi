@@ -1,47 +1,31 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
-import { selectUserName } from "../../../redux/slice/authSlice";
-import styles from "./Navbar.module.css";
-import { FaUserCircle } from "react-icons/fa";
+// src/components/admin/navbar/Navbar.jsx (extrait)
+import { NavLink } from 'react-router-dom';
+import styles from './Navbar.module.css';
 
-const activeLink = ({ isActive }) => (isActive ? `${styles.active}` : "");
-
-const Navbar = () => {
-  const userName = useSelector(selectUserName);
-
+export default function Navbar() {
   return (
-    <div className={styles.navbar}>
-      <div className={styles.user}>
-        <FaUserCircle size={40} color="#fff" />
-        <h4>{userName}</h4>
-      </div>
-      <nav>
-        <ul>
-          <li>
-            <NavLink to="/admin/home" className={activeLink}>
-              Home
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/admin/all-products" className={activeLink}>
-              All Products
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/admin/add-product/ADD" className={activeLink}>
-              Add Product
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/admin/orders" className={activeLink}>
-              Orders
-            </NavLink>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  );
-};
+    <nav className={styles.nav}>
+      <NavLink to="/admin/home" className={({ isActive }) => isActive ? styles.active : ''}>
+        <i className="icon-dashboard"></i> dashboard
+      </NavLink>
 
-export default Navbar;
+      <NavLink to="/admin/all-products" className={({ isActive }) => isActive ? styles.active : ''}>
+        <i className="icon-box"></i> All Products
+      </NavLink>
+
+      {/* Bouton « Ajouter produit » (manquant) */}
+      <NavLink to="/admin/add-product/new" className={({ isActive }) => isActive ? styles.active : ''}>
+        <i className="icon-plus"></i> Add product
+      </NavLink>
+
+      {/* Bouton « Boutiques Pi » (nouveau) */}
+      <NavLink to="/admin/stores" className={({ isActive }) => isActive ? styles.active : ''}>
+        <i className="icon-map"></i> Pi Boutiques
+      </NavLink>
+
+      <NavLink to="/admin/orders" className={({ isActive }) => isActive ? styles.active : ''}>
+        <i className="icon-list"></i> Orders
+      </NavLink>
+    </nav>
+  );
+}

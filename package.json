@@ -14,6 +14,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "firebase": "^9.19.1",
+    "leaflet": "^1.9.4",
     "notiflix": "^3.2.6",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
@@ -21,6 +22,7 @@
     "react-country-region-selector": "^3.6.1",
     "react-dom": "^18.2.0",
     "react-icons": "^4.8.0",
+    "react-leaflet": "^4.2.1",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.10.0",
     "react-scripts": "^5.0.1",
@@ -58,7 +60,7 @@
       "last 1 safari version"
     ]
   },
-  "homepage": ".",
+  "homepage": "https://shop.etralis.com",
   "description": "This project was built by ETRALIS",
   "main": "index.js",
   "repository": {

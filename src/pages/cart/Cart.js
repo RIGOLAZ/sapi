@@ -1,4 +1,3 @@
-// src/pages/cart/Cart.js
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
@@ -19,8 +18,21 @@ import styles from "./Cart.module.css";
 import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { usePiPayment } from "../../hooks/usePiPayment";
-import { httpsCallable } from 'firebase/functions';
-import { getFunctions } from 'firebase/functions';
+
+/* ------------------------------------------------------------------
+   1. DEBUG VISUEL (Pi Browser n’a pas de console)
+------------------------------------------------------------------ */
+const PiDebugPanel = ({ logs }) => (
+  <div style={{
+    position: 'fixed', top: 10, left: 10, zIndex: 9999,
+    background: 'black', color: 'lime', fontSize: 12,
+    padding: 8, borderRadius: 4, maxWidth: 300, maxHeight: 150,
+    overflow: 'auto', fontFamily: 'monospace'
+  }}>
+    <b>🔍 Pi Debug</b><br />
+    {logs.map((l, i) => <div key={i}>» {l}</div>)}
+  </div>
+);
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
@@ -31,10 +43,13 @@ const Cart = () => {
   const [showPiPayment, setShowPiPayment] = useState(false);
   const [piLoading, setPiLoading] = useState(false);
   const [piStatus, setPiStatus] = useState('');
+  const [debugLogs, setDebugLogs] = useState([]);
 
-  // Hook Pi Network (comme dans la demo)
-  const { isPiBrowser, loading, error, paymentStatus, createPayment } = usePiPayment();
+  const { isPiBrowser, createPayment } = usePiPayment();
 
+  /* --------------------------------------------------------------
+     Helpers
+  -------------------------------------------------------------- */
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
     toast.success(`${cart.name} added`, { position: "bottom-right" });
@@ -55,121 +70,129 @@ const Cart = () => {
     toast.info('Cart cleared', { position: "bottom-right" });
   };
 
+  const log = (msg) => {
+    const ts = new Date().toLocaleTimeString();
+    setDebugLogs(prev => [...prev.slice(-9), `${ts} ${msg}`]);
+  };
+
   // 🔥 FONCTIONNALITÉ PI NETWORK (exactement comme demo)
-  const handlePiPayment = async () => {
+    const handlePiPayment = async () => {
+    log("1. Début");
+    log("2. isPiBrowser ? " + isPiBrowser);
+    log("3. cartItems.length ? " + cartItems.length);
+
     if (!isPiBrowser) {
-      toast.info("📱 Please open in Pi Browser to pay with Pi", {
-        position: "bottom-right",
-        autoClose: 4000
-      });
+      log("❌ Pas Pi Browser");
+      toast.info("📱 Please open in Pi Browser to pay with Pi", { position: "bottom-right", autoClose: 4000 });
       return;
     }
-
     if (cartItems.length === 0) {
+      log("❌ Panier vide");
       toast.warning("🛒 Your cart is empty", { position: "bottom-right" });
       return;
     }
+    if (!window.Pi) {
+  log("❌ Pi SDK absent - redirige vers Pi Browser");
+  toast.error("Please open this page in Pi Browser to pay", {
+    position: "bottom-right",
+    autoClose: 8000
+  });
+  // Optionnel : lien vers Pi Browser
+  window.open("https://minepi.com/browser", "_blank");
+  return;
+}
 
     setPiLoading(true);
     setPiStatus('Initializing Pi payment...');
+    log("4. Avant createPayment");
 
     try {
-      // Générer ID commande (comme demo)
       const orderId = `CMD-${Date.now()}`;
-      const amountInPi = cartTotalAmount.toFixed(2);
-      const memo = `Order ${orderId} – SAPI Cart`;
+      // Sécurise le montant
+const raw = Number(cartTotalAmount);
+if (isNaN(raw) || raw <= 0) {
+  log("❌ Montant invalide ou nul");
+  toast.error("Invalid amount", { position: "bottom-right" });
+  return;
+}
+const amountInPi = raw.toFixed(2);
 
-      // Métadonnées (comme demo)
-      const metadata = {
-        orderId: orderId,
-        userId: localStorage.getItem('userId') || 'anonymous',
-        itemsCount: cartItems.length,
-        totalAmount: cartTotalAmount,
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.cartQuantity,
-          imageURL: item.imageURL
-        })),
-        timestamp: Date.now(),
-        source: 'sapi_cart'
-      };
-
-      setPiStatus('Connecting to Pi Network...');
-
-      // 🔥 CRÉER LE PAIEMENT (exactement comme demo)
+// Sécurise les items
+const safeItems = (Array.isArray(cartItems) ? cartItems : []).map(item => ({
+  id: String(item?.id || ''),
+  name: String(item?.name || ''),
+  price: Number(item?.price || 0),
+  quantity: Number(item?.cartQuantity || 1),
+  imageURL: String(item?.imageURL || '')
+}));
+    const memo = `Order ${orderId} – SAPI Cart`;
+    // Sécurise le metadata
+    const metadata = {
+      orderId: orderId,
+      userId: String(localStorage.getItem('userId') || 'anonymous'),
+      itemsCount: safeItems.length,
+      totalAmount: Number(raw),
+      items: safeItems,
+      timestamp: Date.now(),
+      source: 'sapi_cart'
+    };
+      log("0. window.Pi type : " + typeof window.Pi);
+      log("0. User-Agent     : " + navigator.userAgent);
+      log("4b. cartItems type : " + typeof cartItems);
+      log("4c. cartItems      : " + JSON.stringify(cartItems));
+      log("4d. cartTotalAmount : " + cartTotalAmount);
+      log("4e. metadata.items  : " + JSON.stringify(metadata.items));
+      log("4f. metadata        : " + JSON.stringify(metadata));
+      log("5. Appel createPayment...");
+      log("5b. amount : " + amountInPi);
+      log("5c. items  : " + JSON.stringify(metadata.items));
       const paymentResult = await createPayment(amountInPi, memo, metadata);
-      
-      // 🔥 SUCCÈS (comme demo)
+      log("6. Succès : " + JSON.stringify(paymentResult));
       handlePaymentSuccess(paymentResult, orderId);
-      
-    } catch (error) {
-      // 🔥 ERREUR (comme demo)
-      handlePaymentError(error);
+    } catch (e) {
+      log("❌ Erreur : " + e.message);
+      handlePaymentError(e);
     } finally {
       setPiLoading(false);
     }
   };
 
-  // 🔥 GESTION SUCCÈS (exactement comme demo)
   const handlePaymentSuccess = (paymentResult, orderId) => {
-    console.log('✅ Payment successful:', paymentResult);
-    
+    log("7. Succès final");
     setPiStatus('Payment completed! 🎉');
-    
-    toast.success(`Payment successful! Order: ${orderId}`, {
-      position: "bottom-right",
-      autoClose: 3000
-    });
-
-    // Vider le cart (comme demo)
+    toast.success(`Payment successful! Order: ${orderId}`, { position: "bottom-right", autoClose: 3000 });
     setTimeout(() => {
       dispatch(CLEAR_CART());
       setShowPiPayment(false);
-      
-      // Rediriger vers succès (comme demo)
       window.location.href = `/payment-success?order=${orderId}&payment=${paymentResult.paymentId}`;
     }, 2000);
   };
 
-  // 🔥 GESTION ERREURS (exactement comme demo)
   const handlePaymentError = (error) => {
-    console.error('❌ Payment error:', error);
-    
-    if (error.message?.includes('cancelled')) {
-      setPiStatus('Payment cancelled by user');
-      toast.info('Payment cancelled', { position: "bottom-right" });
-    } else if (error.message?.includes('network')) {
-      setPiStatus('Network error - payment saved locally');
-      
-      // Sauvegarder localement (comme demo)
-      const pendingOrder = {
+    log("❌ Erreur finale : " + error.message);
+    let userMsg = 'Payment failed';
+    if (error.message?.toLowerCase().includes('cancel')) userMsg = 'You cancelled the payment';
+    else if (error.message?.toLowerCase().includes('network')) userMsg = 'Network error – order saved locally';
+    else userMsg = error.message;
+
+    toast.error(userMsg, { position: "bottom-right", autoClose: 6000 });
+
+    if (error.message?.toLowerCase().includes('network')) {
+      localStorage.setItem('pendingOrder', JSON.stringify({
         items: cartItems,
         total: cartTotalAmount,
         orderId: `CMD-${Date.now()}`,
         timestamp: new Date().toISOString()
-      };
-      
-      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
-      
-      toast.error("Network error. Payment will be processed when connection is restored.", {
-        position: "bottom-right",
-        autoClose: 5000
-      });
-    } else {
-      setPiStatus(`Payment failed: ${error.message}`);
-      toast.error(`Payment failed: ${error.message}`, {
-        position: "bottom-right"
-      });
+      }));
     }
-    
-    setTimeout(() => {
-      setShowPiPayment(false);
-    }, 3000);
+
+    setShowPiPayment(false);
+    setPiStatus('');
   };
 
-  // 🔥 MODAL PI PAYMENT (respecte ton design)
+    /* --------------------------------------------------------------
+     Modal Pi Payment
+  -------------------------------------------------------------- */
   const PiPaymentModal = () => (
     <div className={styles.modalOverlay} onClick={() => setShowPiPayment(false)}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -183,7 +206,7 @@ const Cart = () => {
             <p>Secure payment with Pi</p>
           </div>
 
-          {paymentStatus && (
+          {piStatus && (
             <div className={styles.piStatus}>
               {piLoading && <span className={styles.piSpinner}></span>}
               {piStatus}
