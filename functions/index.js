@@ -3,6 +3,8 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import axios from 'axios';
+import * as dotenv from "dotenv";
+dotenv.config();   // charge le .env AVANT tout accès
 
 // Initialiser Firebase directement ici
 initializeApp();
@@ -10,8 +12,12 @@ const db = getFirestore();
 
 // Ligne 8 : Ajoute une validation
 const PI_API_KEY = process.env.PI_API_KEY;
+const PI_SECRET = process.env.PI_SECRET;
+const PI_SANDBOX = process.env.PI_SANDBOX === "true";
 if (!PI_API_KEY) {
-  logger.warn('⚠️ PI_API_KEY non défini dans les variables d\'environnement');
+  console.warn("⚠️ PI_API_KEY non défini dans les variables d'environnement");
+} else {
+  console.log("Pi key loaded, length:", PI_API_KEY.length);
 }
 // Configuration Pi Network
 const piAxios = axios.create({
