@@ -1,6 +1,4 @@
 // PiNetworkService.js
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-
 class PiNetworkService {
   constructor() {
     this.Pi = window.Pi;
@@ -19,9 +17,10 @@ class PiNetworkService {
   async authenticate() {
     await this.init();
 
+    // callback OBLIGATOIRE pour éviter l’erreur « every »
     const onIncompletePaymentFound = (payment) => {
       console.log('Incomplete payment found:', payment);
-      return Promise.resolve();
+      return Promise.resolve();          // doit renvoyer une Promise
     };
 
     return this.Pi.authenticate(['payments', 'username'], onIncompletePaymentFound);
@@ -46,7 +45,11 @@ class PiNetworkService {
 
     return new Promise((resolve, reject) => {
       this.Pi.createPayment(
-        { amount, memo, metadata: safeMeta },
+        {
+          amount,
+          memo,
+          metadata: safeMeta
+        },
         {
           onReadyForServerApproval: (paymentId) =>
             this.approvePaymentOnServer(paymentId).catch(reject),
@@ -68,21 +71,15 @@ class PiNetworkService {
 
   /* ----------  CLOUD FUNCTIONS  ---------- */
   async approvePaymentOnServer(paymentId) {
-    const functions = getFunctions();
-    if (process.env.NODE_ENV === 'development') {
-      connectFunctionsEmulator(functions, 'localhost', 5001);
-    }
-    const fn = httpsCallable(functions, 'approvePiPayment');
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const fn = httpsCallable(getFunctions(), 'approvePiPayment');
     const { data } = await fn({ paymentId });
     return data;
   }
 
   async completePaymentOnServer(paymentId, txid) {
-    const functions = getFunctions();
-    if (process.env.NODE_ENV === 'development') {
-      connectFunctionsEmulator(functions, 'localhost', 5001);
-    }
-    const fn = httpsCallable(functions, 'completePiPayment');
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const fn = httpsCallable(getFunctions(), 'completePiPayment');
     const { data } = await fn({ paymentId, txid });
     return data;
   }
