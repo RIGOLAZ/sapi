@@ -14,46 +14,43 @@ const processPiPaymentAndAuth = httpsCallable(functions, 'processPiPaymentAndAut
  * @returns {Promise<Object>} Les données de la réponse de la Cloud Function.
  */
 export const initiatePiPayment = async (amount, cartItems) => {
-    try {
-        const Pi = window.Pi;
-        if (!Pi) {
-            alert("Erreur: Pi SDK non chargé.");
-            throw new Error("Pi SDK not available. Please ensure it is loaded inside the Pi Browser.");
-        }
+  const Pi = window.Pi;
+  if (!Pi) {
+    throw new Error("Pi SDK non chargé – ouvrez cette page dans le Pi Browser.");
+  }
 
-        alert("1. Appel de Pi.authenticate...");
-        const authResult = await Pi.authenticate(['username']);
-        alert("2. Authentification Pi réussie.", authResult);
-        const piUserUid = authResult.user.uid;
+  // 1. Handler obligatoire pour les paiements inachevés
+  Pi.onIncompletePaymentFound(payment => {
+    // tu peux soit :
+    // - renvoyer le paiement à ta cloud function pour vérification
+    // - ou simplement logger
+    console.log("Paiement inachevé détecté :", payment);
+    return true;   // indique que tu gères
+  });
 
-        const orderId = `${piUserUid}-${new Date().getTime()}`;
+  // 2. Authentification
+  const auth = await Pi.authenticate(['username']);
+  console.log("Utilisateur Pi :", auth.user.uid);
 
-        const paymentData = {
-            amount: amount,
-            memo: `Paiement pour commande #${orderId}`,
-            metadata: {
-                orderId: orderId,
-                items: cartItems
-            }
-        };
-        console.log("Objet Pi:", Pi);
-        console.log("3. Appel de Pi.createPayment avec les données :", paymentData);
-        const paymentResult = await Pi.createPayment(paymentData);
-        console.log("4. Paiement Pi créé. Résultat :", paymentResult);
-        const transactionId = paymentResult.transaction.txid;
+  // 3. Création du paiement
+  const orderId = `${auth.user.uid}-${Date.now()}`;
+  const paymentData = {
+    amount,
+    memo: `Commande #${orderId}`,
+    metadata: { orderId, items: cartItems }
+  };
 
-        console.log("5. Appel de la Cloud Function pour vérification...");
-        const verificationResult = await processPiPaymentAndAuth({ transactionId, piUserUid, orderId, cartItems });
-        console.log("6. Vérification Cloud Function réussie. Résultat :", verificationResult);
+  const payment = await Pi.createPayment(paymentData);
+  console.log("Paiement créé :", payment);
 
-        console.log("7. Connexion à Firebase avec le Custom Token...");
-        await signInWithCustomToken(auth, verificationResult.data.customToken);
-        console.log("8. Connexion Firebase réussie.");
+  // 4. Vérification côté serveur + connexion Firebase
+  const verif = await processPiPaymentAndAuth({
+    transactionId: payment.transaction.txid,
+    piUserUid: auth.user.uid,
+    orderId,
+    cartItems
+  });
 
-        return verificationResult.data;
-    } catch (error) {
-                alert("Erreur PiPayment: " + error.message);
-        console.error("Erreur complète du processus Pi/Firebase:", error);
-        throw error;
-    }
+  await signInWithCustomToken(auth, verif.data.customToken);
+  return verif.data;
 };

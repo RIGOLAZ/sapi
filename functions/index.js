@@ -19,16 +19,16 @@ if (!PI_API_KEY) {
 } else {
   console.log("Pi key loaded, length:", PI_API_KEY.length);
 }
-// Configuration Pi Network
+
 const piAxios = axios.create({
-  baseURL: 'https://api.testnet.minepi.com', // ✅ Sans espace
+  baseURL: PI_SANDBOX ? 'https://api.testnet.minepi.com' : 'https://api.minepi.com',
   timeout: 30000,
   headers: {
     'Authorization': `Key ${PI_API_KEY}`,
     'Content-Type': 'application/json'
   }
 });
-// Puis le reste de ton code...
+
 
 logger.info('Firebase Functions initialized with Pi Payment integration');
 

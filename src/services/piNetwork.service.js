@@ -1,46 +1,62 @@
 // PiNetworkService.js
+
 class PiNetworkService {
   constructor() {
     this.Pi = window.Pi;
-    this.baseURL = process.env.NODE_ENV === 'production'
-      ? 'https://api.minepi.com'
-      : 'https://api.testnet.minepi.com';
+    this.isInitialized = false;
   }
 
-  /* ----------  INIT  ---------- */
+  isPiBrowser() {
+    return typeof window !== 'undefined' && !!window.Pi;
+  }
+
   async init() {
-    if (!this.Pi) throw new Error('Pi SDK not available');
-    await this.Pi.init({ version: '2.0', sandbox: true });
+    if (this.isInitialized) return;
+    
+    if (!this.Pi) {
+      throw new Error('Pi SDK non disponible. Assurez-vous d\'être dans le navigateur Pi.');
+    }
+
+    try {
+      // Initialisation avec les bonnes permissions
+      await this.Pi.init({ 
+        version: "2.0",
+        sandbox: true // Changez à false pour la production
+      });
+      this.isInitialized = true;
+      console.log('Pi SDK initialisé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation du Pi SDK:', error);
+      throw error;
+    }
   }
 
-  /* ----------  AUTH  ---------- */
   async authenticate() {
     await this.init();
-
-    // callback OBLIGATOIRE pour éviter l’erreur « every »
+    
+    // callback OBLIGATOIRE pour éviter l'erreur « every »
     const onIncompletePaymentFound = (payment) => {
       console.log('Incomplete payment found:', payment);
-      return Promise.resolve();          // doit renvoyer une Promise
+      return Promise.resolve(); // doit renvoyer une Promise
     };
 
-    return this.Pi.authenticate(['payments', 'username'], onIncompletePaymentFound);
+    try {
+      // Cette ligne va déclencher l'écran d'autorisation Pi Network
+      const authResult = await this.Pi.authenticate(['payments', 'username'], onIncompletePaymentFound);
+      console.log('Authentification Pi Network réussie:', authResult);
+      return authResult;
+    } catch (error) {
+      console.error('Erreur d\'authentification Pi Network:', error);
+      throw error;
+    }
   }
 
-  /* ----------  CREATE PAYMENT  ---------- */
   async createPayment(amount, memo, metadata = {}) {
-    if (!amount || amount <= 0) throw new Error('Invalid amount');
-    if (!memo) throw new Error('Memo is required');
-
-    const auth = await this.authenticate();
+    await this.init();
 
     const safeMeta = {
       ...metadata,
-      userUid: auth.user.uid,
-      username: auth.user.username,
-      timestamp: Date.now(),
-      items: Array.isArray(metadata.items) ? metadata.items : [],
-      itemsCount: metadata.items?.length || 0,
-      totalAmount: metadata.totalAmount || amount
+      timestamp: Date.now()
     };
 
     return new Promise((resolve, reject) => {
@@ -53,17 +69,18 @@ class PiNetworkService {
         {
           onReadyForServerApproval: (paymentId) =>
             this.approvePaymentOnServer(paymentId).catch(reject),
-
           onReadyForServerCompletion: (paymentId, txid) =>
             this.completePaymentOnServer(paymentId, txid)
-              .then(() => resolve({ paymentId, txid }))
+              .then(resolve)
               .catch(reject),
-
-          onCancel: (paymentId) =>
-            reject(new Error(`Payment ${paymentId} cancelled by user`)),
-
-          onError: (error, paymentId) =>
-            reject(new Error(`Payment ${paymentId} error: ${error.message || error}`))
+          onCancel: (paymentId) => {
+            console.log('Paiement annulé:', paymentId);
+            reject(new Error('Paiement annulé par l\'utilisateur'));
+          },
+          onError: (error, payment) => {
+            console.error('Erreur de paiement:', error, payment);
+            reject(new Error(`Erreur de paiement: ${error.message}`));
+          }
         }
       );
     });
@@ -82,11 +99,6 @@ class PiNetworkService {
     const fn = httpsCallable(getFunctions(), 'completePiPayment');
     const { data } = await fn({ paymentId, txid });
     return data;
-  }
-
-  /* ----------  UTIL  ---------- */
-  isPiBrowser() {
-    return typeof window.Pi !== 'undefined';
   }
 }
 
