@@ -1,211 +1,161 @@
+// functions/index.js
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { logger } from 'firebase-functions';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import axios from 'axios';
-import * as dotenv from "dotenv";
-dotenv.config();   // charge le .env AVANT tout accès
+import { getFirestore } from 'firebase-admin/firestore';
+import { https } from 'firebase-functions';
+import { getAuth } from 'firebase-admin/auth';
 
-// Initialiser Firebase directement ici
+// Initialisation Firebase Admin
 initializeApp();
-const db = getFirestore();
 
-// Ligne 8 : Ajoute une validation
+const db = getFirestore();
+const auth = getAuth();
+
+// 🔐 Configuration Pi Network (dans les variables d'environnement Firebase)
 const PI_API_KEY = process.env.PI_API_KEY;
-const PI_SECRET = process.env.PI_SECRET;
-const PI_SANDBOX = process.env.PI_SANDBOX === "true";
-if (!PI_API_KEY) {
-  console.warn("⚠️ PI_API_KEY non défini dans les variables d'environnement");
-} else {
-  console.log("Pi key loaded, length:", PI_API_KEY.length);
+const PI_BASE_URL = 'https://api.minepi.com/v2';
+
+// ✅ ENDPOINT D'APPROBATION
+export const approvePayment = https.onCall(async (data, context) => {
+    // Vérifier l'authentification
+    if (!context.auth) {
+        throw new https.HttpsError('unauthenticated', 'Non authentifié');
+    }
+
+    const { paymentId, orderId, amount } = data;
+
+    try {
+        // Appeler l'API Pi pour approuver
+        const response = await fetch(`${PI_BASE_URL}/payments/${paymentId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Key ${PI_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ amount })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Pi API error: ${response.status}`);
+        }
+
+        // Enregistrer l'approbation dans Firestore
+        await db.collection('payments').doc(paymentId).set({
+            paymentId,
+            orderId,
+            userId: context.auth.uid,
+            status: 'approved',
+            approvedAt: new Date()
+        }, { merge: true });
+
+        return { success: true, paymentId };
+
+    } catch (error) {
+        console.error('Erreur approbation:', error);
+        throw new https.HttpsError('internal', error.message);
+    }
+});
+
+// ✅ ENDPOINT DE COMPLÉTION
+export const completePayment = https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new https.HttpsError('unauthenticated', 'Non authentifié');
+    }
+
+    const { paymentId, txid, orderId } = data;
+
+    try {
+        // Valider la transaction sur la blockchain Pi
+        const txValid = await validatePiTransaction(txid);
+        
+        if (!txValid) {
+            throw new Error('Transaction Pi invalide');
+        }
+
+        // Compléter le paiement via l'API Pi
+        const response = await fetch(`${PI_BASE_URL}/payments/${paymentId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Key ${PI_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ txid })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Pi completion error: ${response.status}`);
+        }
+
+        // Mettre à jour Firestore
+        const batch = db.batch();
+        
+        const paymentRef = db.collection('payments').doc(paymentId);
+        batch.update(paymentRef, {
+            status: 'completed',
+            txid: txid,
+            completedAt: new Date()
+        });
+
+        const orderRef = db.collection('orders').doc(orderId);
+        batch.update(orderRef, {
+            status: 'completed',
+            piTransactionId: txid,
+            completedAt: new Date()
+        });
+
+        await batch.commit();
+
+        return { success: true, txid };
+
+    } catch (error) {
+        console.error('Erreur complétion:', error);
+        throw new https.HttpsError('internal', error.message);
+    }
+});
+
+// ✅ FONCTION DE VALIDATION DES TRANSACTIONS
+async function validatePiTransaction(txid) {
+    try {
+        // Implémentez la validation via l'API Pi Blockchain
+        const response = await fetch(`https://api.minepi.com/v2/transactions/${txid}`, {
+            headers: {
+                'Authorization': `Key ${PI_API_KEY}`
+            }
+        });
+
+        if (response.ok) {
+            const transaction = await response.json();
+            return transaction.status === 'completed';
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Erreur validation transaction:', error);
+        return false;
+    }
 }
 
-const piAxios = axios.create({
-  baseURL: PI_SANDBOX ? 'https://api.testnet.minepi.com' : 'https://api.minepi.com',
-  timeout: 30000,
-  headers: {
-    'Authorization': `Key ${PI_API_KEY}`,
-    'Content-Type': 'application/json'
-  }
-});
+// ✅ FONCTION POUR RÉCUPÉRER LES STATUTS DE PAIEMENT
+export const getPaymentStatus = https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new https.HttpsError('unauthenticated', 'Non authentifié');
+    }
 
+    const { paymentId } = data;
 
-logger.info('Firebase Functions initialized with Pi Payment integration');
+    try {
+        const paymentDoc = await db.collection('payments').doc(paymentId).get();
+        
+        if (!paymentDoc.exists) {
+            return { success: false, error: 'Paiement non trouvé' };
+        }
 
-// 🔥 FUNCTIONS DIRECTEMENT ICI (plus simple)
+        return { 
+            success: true, 
+            payment: paymentDoc.data() 
+        };
 
-/**
- * Cloud Function pour approuver un paiement
- */
-export const approvePiPayment = onCall({
-  region: 'us-central1',
-  cors: true
-}, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'Utilisateur non authentifié');
-  }
-
-  const { paymentId } = request.data;
-  const userId = request.auth.uid;
-
-  if (!paymentId) {
-    throw new HttpsError('invalid-argument', 'Payment ID requis');
-  }
-
-  try {
-    logger.info(`Approbation paiement ${paymentId} pour utilisateur ${userId}`);
-    
-    // Récupérer les infos du paiement depuis Pi Network
-    const paymentInfo = await piAxios.get(`/v2/payments/${paymentId}`);
-    
-    // Approuver chez Pi Network
-    const approvalResponse = await piAxios.post(`/v2/payments/${paymentId}/approve`);
-    
-    // Sauvegarder dans Firestore
-    await db.collection('piPayments').doc(paymentId).set({
-      userId: userId,
-      status: 'approved',
-      amount: paymentInfo.data.amount,
-      memo: paymentInfo.data.memo,
-      metadata: paymentInfo.data.metadata || {},
-      approvedAt: FieldValue.serverTimestamp(),
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-
-    return { 
-      success: true, 
-      message: 'Paiement approuvé',
-      data: approvalResponse.data 
-    };
-
-  } catch (error) {
-    logger.error('Erreur approbation paiement:', error);
-    throw new HttpsError('internal', error.message);
-  }
-});
-
-/**
- * Cloud Function pour compléter un paiement
- */
-export const completePiPayment = onCall({
-  region: 'us-central1',
-  cors: true
-}, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'Utilisateur non authentifié');
-  }
-
-  const { paymentId, txid } = request.data;
-  const userId = request.auth.uid;
-
-  if (!paymentId || !txid) {
-    throw new HttpsError('invalid-argument', 'Payment ID et TXID requis');
-  }
-
-  try {
-    logger.info(`Completion paiement ${paymentId} avec TX ${txid}`);
-    
-    // Compléter chez Pi Network
-    const completionResponse = await piAxios.post(
-      `/v2/payments/${paymentId}/complete`,
-      { txid }
-    );
-
-    // Mettre à jour Firestore
-    await db.collection('piPayments').doc(paymentId).update({
-      status: 'completed',
-      txid: txid,
-      completedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-
-    return { 
-      success: true, 
-      message: 'Paiement complété avec succès',
-      data: completionResponse.data 
-    };
-
-  } catch (error) {
-    logger.error('Erreur completion paiement:', error);
-    throw new HttpsError('internal', error.message);
-  }
-});
-
-/**
- * Cloud Function pour annuler un paiement
- */
-export const cancelPiPayment = onCall({
-  region: 'us-central1',
-  cors: true
-}, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'Utilisateur non authentifié');
-  }
-
-  const { paymentId } = request.data;
-  const userId = request.auth.uid;
-
-  if (!paymentId) {
-    throw new HttpsError('invalid-argument', 'Payment ID requis');
-  }
-
-  try {
-    logger.info(`Annulation paiement ${paymentId} pour utilisateur ${userId}`);
-    
-    // Mettre à jour le statut dans Firestore
-    await db.collection('piPayments').doc(paymentId).update({
-      status: 'cancelled',
-      cancelledAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-
-    return { 
-      success: true, 
-      message: 'Paiement annulé'
-    };
-
-  } catch (error) {
-    logger.error('Erreur annulation paiement:', error);
-    throw new HttpsError('internal', error.message);
-  }
-});
-
-/**
- * Cloud Function pour obtenir l'historique des paiements
- */
-export const getPiPaymentHistory = onCall({
-  region: 'us-central1',
-  cors: true
-}, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'Utilisateur non authentifié');
-  }
-
-  const userId = request.auth.uid;
-  const limit = request.data.limit || 50;
-
-  try {
-    logger.info(`Récupération historique paiements pour ${userId}`);
-    
-    const snapshot = await db.collection('piPayments')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get();
-    
-    const payments = [];
-    snapshot.forEach(doc => {
-      payments.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-
-    return { payments };
-
-  } catch (error) {
-    logger.error('Erreur récupération historique:', error);
-    throw new HttpsError('internal', 'Erreur lors de la récupération de l\'historique');
-  }
+    } catch (error) {
+        console.error('Erreur récupération statut:', error);
+        throw new https.HttpsError('internal', error.message);
+    }
 });

@@ -359,7 +359,7 @@
   color: white
 }
 
-@media (max-width: 768px) {
+@media (max-width: 985px) {
   .cartContent {
     grid-template-columns: 1fr;
     gap: 20px;
