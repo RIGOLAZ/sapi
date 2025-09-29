@@ -75,6 +75,30 @@ const Cart = () => {
     setDebugLogs(prev => [...prev.slice(-9), `${ts} ${msg}`]);
   };
 
+  const handlePiPay = async () => {
+  if (!isPiBrowser) {
+    toast.info("📱 Please open in Pi Browser to pay with Pi", { position: "bottom-right", autoClose: 4000 });
+    return;
+  }
+  if (cartItems.length === 0) {
+    toast.warning("🛒 Your cart is empty", { position: "bottom-right" });
+    return;
+  }
+
+  setPiLoading(true);
+  try {
+    await createPayment(
+      cartTotalAmount.toFixed(2),
+      'Order from SAPI Cart',
+      { items: cartItems }
+    );
+  } catch (e) {
+    console.error('Erreur paiement', e);
+  } finally {
+    setPiLoading(false);
+  }
+};
+
   // 🔥 FONCTIONNALITÉ PI NETWORK (exactement comme demo)
     const handlePiPayment = async () => {
     log("1. Début");
@@ -350,20 +374,20 @@ const safeItems = (Array.isArray(cartItems) ? cartItems : []).map(item => ({
             </div>
 
             {/* 🔥 BOUTON PI PAYMENT (respecte ton design) */}
-            <button
-              className={styles.checkoutButton}
-              onClick={() => setShowPiPayment(true)}
-              disabled={!isPiBrowser || piLoading}
-            >
-              {piLoading ? (
-                <>
-                  <span className={styles.piSpinner}></span>
-                  Processing...
-                </>
-              ) : (
-                <>Pay {cartTotalAmount.toFixed(2)} Pi</>
-              )}
-            </button>
+           <button
+  className={styles.checkoutButton}
+  onClick={handlePiPay}
+  disabled={!isPiBrowser || piLoading}
+>
+  {piLoading ? (
+    <>
+      <span className={styles.piSpinner}></span>
+      Processing...
+    </>
+  ) : (
+    <>Pay {cartTotalAmount.toFixed(2)} Pi</>
+  )}
+</button>
 
             {!isPiBrowser && (
               <div className={styles.piBrowserNote}>

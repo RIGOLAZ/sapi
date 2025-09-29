@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import piNetworkService from '../services/piNetwork.service';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import PiNetworkService from '../services/piNetwork.service';
 
 export const usePiPayment = () => {
+  const piService = useRef(new PiNetworkService()).current;
+
   const [isPiBrowser, setIsPiBrowser] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -9,57 +11,48 @@ export const usePiPayment = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsPiBrowser(piNetworkService.isPiBrowser());
-  }, []);
+    setIsPiBrowser(piService.isPiBrowser());
+  }, [piService]);
 
-  // Nouvelle méthode pour déclencher l'authentification
   const authenticate = useCallback(async () => {
-    if (!isPiBrowser) {
-      throw new Error('Pi Browser non détecté');
-    }
-
-    setLoading(true);
-    setError(null);
-    setPaymentStatus('authenticating');
-
-    try {
-      const authResult = await piNetworkService.authenticate();
-      setIsAuthenticated(true);
-      setPaymentStatus('authenticated');
-      console.log('Authentification réussie:', authResult);
-      return authResult;
-    } catch (error) {
-      setError(error.message);
-      setPaymentStatus('auth_failed');
-      setIsAuthenticated(false);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [isPiBrowser]);
+  if (!isPiBrowser) throw new Error('Pi Browser non détecté');
+  setLoading(true);
+  setError(null);
+  setPaymentStatus('authenticating');
+  try {
+    await piService.init(); // force sandbox
+    const res = await piService.authenticate();
+    setIsAuthenticated(true);
+    setPaymentStatus('authenticated');
+    console.log('Auth OK :', res);
+    return res;
+  } catch (e) {
+    setError(e.message);
+    setPaymentStatus('auth_failed');
+    setIsAuthenticated(false);
+    throw e;
+  } finally {
+    setLoading(false);
+  }
+}, [isPiBrowser, piService]);
 
   const createPayment = useCallback(async (amount, memo, metadata = {}) => {
-    // Authentifier d'abord si pas encore fait
-    if (!isAuthenticated) {
-      await authenticate();
-    }
-
+    if (!isAuthenticated) await authenticate();
     setLoading(true);
     setError(null);
     setPaymentStatus('initializing');
-
     try {
-      const result = await piNetworkService.createPayment(amount, memo, metadata);
+      const res = await piService.createPayment(amount, memo, metadata);
       setPaymentStatus('completed');
-      return result;
-    } catch (error) {
-      setError(error.message);
+      return res;
+    } catch (e) {
+      setError(e.message);
       setPaymentStatus('failed');
-      throw error;
+      throw e;
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, authenticate]);
+  }, [isAuthenticated, authenticate, piService]);
 
   const reset = useCallback(() => {
     setError(null);
