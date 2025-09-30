@@ -1,3 +1,4 @@
+// components/Cart.js
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
@@ -15,7 +16,7 @@ import {
   selectCartTotalQuantity,
 } from "../../redux/slice/cartSlice";
 import styles from "./Cart.module.css";
-import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes, FaExternalLinkAlt, FaLock, FaCheckCircle } from "react-icons/fa";
+import { FaTrashAlt, FaPlus, FaMinus, FaShoppingBag, FaTimes, FaExternalLinkAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import usePiPayment from "../../hooks/usePiPayment";
 
@@ -35,46 +36,30 @@ const Cart = () => {
   
   const [currentOrder, setCurrentOrder] = useState(null);
   const [piStatus, setPiStatus] = useState('');
-  const [permissionError, setPermissionError] = useState(false);
 
-  const { 
-    isPiBrowser, 
-    createPayment, 
-    loading: piLoading, 
-    setupPiCallbacks,
-    hasPaymentsScope 
-  } = usePiPayment();
+  const { isPiBrowser, createPayment, loading: piLoading, setupPiCallbacks } = usePiPayment();
 
   /* --------------------------------------------------------------
      GESTION DU PANIER
   -------------------------------------------------------------- */
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
-    toast.success(`${cart.name} ajouté au panier`, { 
-      position: "bottom-right",
-      icon: "🛒"
-    });
+    toast.success(`${cart.name} ajouté`, { position: "bottom-right" });
   };
 
   const decreaseCart = (cart) => {
     dispatch(DECREASE_CART(cart));
-    toast.info(`${cart.name} quantité diminuée`, { 
-      position: "bottom-right" 
-    });
+    toast.info(`${cart.name} retiré`, { position: "bottom-right" });
   };
 
   const removeFromCart = (cart) => {
     dispatch(REMOVE_FROM_CART(cart));
-    toast.error(`${cart.name} retiré du panier`, { 
-      position: "bottom-right" 
-    });
+    toast.error(`${cart.name} supprimé`, { position: "bottom-right" });
   };
 
   const clearCart = () => {
     dispatch(CLEAR_CART());
-    toast.info('Panier vidé', { 
-      position: "bottom-right" 
-    });
+    toast.info('Panier vidé', { position: "bottom-right" });
   };
 
   /* --------------------------------------------------------------
@@ -82,32 +67,21 @@ const Cart = () => {
   -------------------------------------------------------------- */
   const startPiPaymentFlow = () => {
     if (!isPiBrowser) {
-      toast.info(
-        <div>
-          <strong>📱 Pi Browser requis</strong>
-          <br />
-          Ouvrez cette page dans l'application Pi Browser
-        </div>,
-        { 
-          position: "bottom-right", 
-          autoClose: 6000,
-          closeButton: true
-        }
-      );
+      toast.info("📱 Ouvrez dans Pi Browser pour payer avec Pi", { 
+        position: "bottom-right", 
+        autoClose: 5000 
+      });
       return;
     }
 
     if (cartItems.length === 0) {
-      toast.warning("🛒 Votre panier est vide", { 
-        position: "bottom-right" 
-      });
+      toast.warning("🛒 Votre panier est vide", { position: "bottom-right" });
       return;
     }
 
     // Étape 1: Ouvrir VOTRE modal de préparation
     setPaymentFlow(prev => ({ ...prev, showPreModal: true }));
     setPiStatus('Préparation du paiement...');
-    setPermissionError(false);
   };
 
   const launchPiPayment = async () => {
@@ -116,7 +90,7 @@ const Cart = () => {
       const amount = parseFloat(cartTotalAmount.toFixed(2));
       
       if (isNaN(amount) || amount <= 0) {
-        throw new Error("Montant de paiement invalide");
+        throw new Error("Montant invalide");
       }
 
       // Préparer les données de commande
@@ -137,13 +111,10 @@ const Cart = () => {
           id: item.id,
           name: item.name,
           price: item.price,
-          quantity: item.cartQuantity,
-          imageURL: item.imageURL
+          quantity: item.cartQuantity
         })),
         totalItems: cartTotalQuantity,
-        totalAmount: amount,
-        store: 'SAPI Store',
-        environment: process.env.NODE_ENV
+        totalAmount: amount
       };
 
       const memo = `SAPI Store - ${cartTotalQuantity} article(s) - ${orderId}`;
@@ -151,85 +122,56 @@ const Cart = () => {
       console.log("🎯 Lancement paiement Pi:", { amount, memo, metadata });
 
       // Configuration des callbacks Pi
-      const callbacks = setupPiCallbacks(
-        // onApproval - Appelé quand l'utilisateur approuve le paiement
+      setupPiCallbacks(
+        // onApproval
         async (paymentId) => {
           console.log("✅ Paiement approuvé par utilisateur:", paymentId);
-          setPiStatus('Validation du paiement côté serveur...');
+          setPiStatus('Validation du paiement...');
           
-          try {
-            // Simuler l'appel à votre backend
-            const approvalResult = await approvePaymentOnServer(paymentId, orderId, amount);
-            
-            if (!approvalResult.success) {
-              throw new Error("Échec de l'approbation serveur");
-            }
-            
-            console.log("✅ Paiement validé par le serveur");
-            
-          } catch (error) {
-            console.error("❌ Erreur lors de l'approbation:", error);
-            throw error;
+          // Ici, vous appelez votre backend pour approuver
+          const approvalResult = await approvePaymentOnServer(paymentId, orderId, amount);
+          
+          if (!approvalResult.success) {
+            throw new Error("Échec approbation serveur");
           }
         },
         
-        // onCompletion - Appelé quand la transaction est prête
+        // onCompletion  
         async (paymentId, txid) => {
           console.log("✅ Transaction complétée:", paymentId, txid);
           setPiStatus('Finalisation de la commande...');
           
-          try {
-            // Simuler l'appel à votre backend
-            const completionResult = await completePaymentOnServer(paymentId, txid, orderId);
-            
-            if (!completionResult.success) {
-              throw new Error("Échec de la complétion serveur");
-            }
-            
+          // Ici, vous appelez votre backend pour compléter
+          const completionResult = await completePaymentOnServer(paymentId, txid, orderId);
+          
+          if (completionResult.success) {
             // Compléter le paiement côté Pi
-            if (window.Pi && typeof window.Pi.completePayment === 'function') {
+            if (window.Pi.completePayment) {
               await window.Pi.completePayment(paymentId, txid);
             }
             
             // Gérer le succès
             handlePaymentSuccess(orderId, paymentId, txid);
-            
-          } catch (error) {
-            console.error("❌ Erreur lors de la complétion:", error);
-            throw error;
+          } else {
+            throw new Error("Échec complétion serveur");
           }
         },
         
-        // onCancel - Appelé quand l'utilisateur annule
+        // onCancel
         (paymentId) => {
-          console.log("❌ Paiement annulé dans l'interface Pi:", paymentId);
+          console.log("❌ Paiement annulé dans l'interface Pi");
           setPiStatus('Paiement annulé');
-          toast.info(
-            <div>
-              <strong>Paiement annulé</strong>
-              <br />
-              Vous pouvez réessayer à tout moment
-            </div>,
-            { 
-              position: "bottom-right",
-              autoClose: 4000
-            }
-          );
+          toast.info("Paiement annulé", { position: "bottom-right" });
           resetPaymentFlow();
         },
         
-        // onError - Appelé en cas d'erreur
+        // onError
         (error) => {
           console.error("❌ Erreur interface Pi:", error);
-          setPiStatus('Erreur lors du paiement');
+          setPiStatus('Erreur de paiement');
           handlePaymentError(error);
         }
       );
-
-      // Si les callbacks ne sont pas disponibles, on utilise le mode simple
-      if (!callbacks.hasCallbacks) {
-        console.log("ℹ️ Mode simple activé - pas de callbacks disponibles");
-      }
 
       // Étape 2: Fermer VOTRE modal et ouvrir l'interface Pi
       setPaymentFlow(prev => ({ 
@@ -238,37 +180,18 @@ const Cart = () => {
         piInterfaceOpen: true 
       }));
       
-      setPiStatus('Ouverture de l\'interface Pi Network...');
-      setPermissionError(false);
+      setPiStatus('Ouverture interface Pi...');
 
       // Étape 3: Lancer le paiement - OUVRE L'INTERFACE OFFICIELLE PI
       const payment = await createPayment(amount, memo, metadata);
       
-      console.log("🔗 Interface Pi ouverte avec succès:", payment);
+      console.log("🔗 Interface Pi ouverte:", payment);
       setPiStatus('Interface Pi Network ouverte - Confirmez le paiement');
 
     } catch (error) {
-      console.error('❌ Erreur lors du lancement du paiement:', error);
-      
-      // Gestion spécifique des erreurs de permission
-      if (error.message.includes('payments scope') || error.message.includes('Permission')) {
-        setPermissionError(true);
-        setPiStatus('Permission de paiement requise');
-        toast.error(
-          <div>
-            <strong>🔒 Permission requise</strong>
-            <br />
-            Autorisez les paiements dans Pi Browser
-          </div>,
-          { 
-            position: "bottom-right", 
-            autoClose: 8000,
-            closeButton: true
-          }
-        );
-      } else {
-        handlePaymentError(error);
-      }
+      console.error('❌ Erreur lancement paiement:', error);
+      handlePaymentError(error);
+      resetPaymentFlow();
     }
   };
 
@@ -279,7 +202,7 @@ const Cart = () => {
     setPaymentFlow(prev => ({ ...prev, processing: false, completed: true }));
     setPiStatus('🎉 Paiement réussi !');
     
-    // Sauvegarder la commande localement
+    // Sauvegarder la commande
     const orderData = {
       orderId,
       paymentId,
@@ -287,27 +210,17 @@ const Cart = () => {
       items: cartItems,
       total: cartTotalAmount,
       status: 'completed',
-      date: new Date().toISOString(),
-      paymentMethod: 'Pi Network'
+      date: new Date().toISOString()
     };
 
     localStorage.setItem(`order_${orderId}`, JSON.stringify(orderData));
-    localStorage.setItem('last_successful_order', JSON.stringify(orderData));
     
-    toast.success(
-      <div>
-        <strong>✅ Paiement réussi !</strong>
-        <br />
-        Commande: {orderId}
-      </div>,
-      { 
-        position: "bottom-right", 
-        autoClose: 5000,
-        icon: <FaCheckCircle style={{ color: '#10B981' }} />
-      }
-    );
+    toast.success(`Paiement réussi ! Commande: ${orderId}`, { 
+      position: "bottom-right", 
+      autoClose: 4000 
+    });
 
-    // Vider le panier et rediriger après délai
+    // Vider le panier après délai
     setTimeout(() => {
       dispatch(CLEAR_CART());
       resetPaymentFlow();
@@ -318,37 +231,14 @@ const Cart = () => {
   };
 
   const handlePaymentError = (error) => {
-    console.error('❌ Erreur de paiement détaillée:', error);
+    console.error('❌ Erreur paiement:', error);
     
     let userMessage = 'Échec du paiement. Veuillez réessayer.';
-    let toastType = 'error';
+    if (error.message?.includes('annulé') || error.message?.includes('cancel')) {
+      userMessage = 'Paiement annulé';
+    }
     
-    if (error.message?.includes('annulé') || error.message?.includes('cancel') || error.message?.includes('cancelled')) {
-      userMessage = 'Paiement annulé par l\'utilisateur';
-      toastType = 'info';
-    } else if (error.message?.includes('network') || error.message?.includes('réseau')) {
-      userMessage = 'Erreur réseau - Vérifiez votre connexion';
-      toastType = 'warning';
-    } else if (error.message?.includes('payments scope') || error.message?.includes('Permission')) {
-      userMessage = 'Permission de paiement requise';
-      setPermissionError(true);
-    }
-
-    // Afficher le toast approprié
-    const toastConfig = { 
-      position: "bottom-right", 
-      autoClose: 6000,
-      closeButton: true
-    };
-
-    if (toastType === 'error') {
-      toast.error(userMessage, toastConfig);
-    } else if (toastType === 'warning') {
-      toast.warning(userMessage, toastConfig);
-    } else {
-      toast.info(userMessage, toastConfig);
-    }
-
+    toast.error(userMessage, { position: "bottom-right", autoClose: 5000 });
     resetPaymentFlow();
   };
 
@@ -361,11 +251,10 @@ const Cart = () => {
     });
     setPiStatus('');
     setCurrentOrder(null);
-    setPermissionError(false);
   };
 
   /* --------------------------------------------------------------
-     FONCTIONS SERVEUR (SIMULATION - À REMPLACER PAR VOS APIS)
+     FONCTIONS SERVEUR (SIMULATION)
   -------------------------------------------------------------- */
   const approvePaymentOnServer = async (paymentId, orderId, amount) => {
     console.log("📤 Simulation approbation serveur:", { paymentId, orderId, amount });
@@ -373,12 +262,7 @@ const Cart = () => {
     // Remplacez par votre API réelle
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({ 
-          success: true, 
-          paymentId,
-          orderId,
-          approvedAt: new Date().toISOString()
-        });
+        resolve({ success: true, paymentId });
       }, 1500);
     });
   };
@@ -389,12 +273,7 @@ const Cart = () => {
     // Remplacez par votre API réelle  
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({ 
-          success: true, 
-          txid,
-          orderId,
-          completedAt: new Date().toISOString()
-        });
+        resolve({ success: true, txid });
       }, 1500);
     });
   };
@@ -410,7 +289,6 @@ const Cart = () => {
         <button 
           className={styles.closeButton} 
           onClick={() => resetPaymentFlow()}
-          disabled={piLoading}
         >
           <FaTimes />
         </button>
@@ -418,19 +296,17 @@ const Cart = () => {
         <div className={styles.piPaymentContainer}>
           <div className={styles.piHeader}>
             <div className={styles.piLogo}>π</div>
-            <h3>Confirmer le paiement</h3>
-            <p>Vérifiez les détails avant de continuer vers Pi Network</p>
+            <h3>Préparation du paiement</h3>
+            <p>Vérifiez les détails avant de continuer</p>
           </div>
 
           <div className={styles.orderSummary}>
-            <h4>📦 Votre commande</h4>
+            <h4>Résumé de votre commande</h4>
             <div className={styles.summaryItems}>
               {cartItems.map((item, index) => (
                 <div key={index} className={styles.summaryItem}>
-                  <span className={styles.itemName}>{item.name}</span>
-                  <span className={styles.itemDetails}>
-                    {item.cartQuantity} × {item.price}π
-                  </span>
+                  <span>{item.name}</span>
+                  <span>{item.cartQuantity} × {item.price}π</span>
                 </div>
               ))}
             </div>
@@ -440,9 +316,6 @@ const Cart = () => {
             <div className={styles.amountRow}>
               <span>Total à payer:</span>
               <span className={styles.totalAmount}>{cartTotalAmount.toFixed(2)} π</span>
-            </div>
-            <div className={styles.amountNote}>
-              Montant exact qui sera débité de votre portefeuille Pi
             </div>
           </div>
 
@@ -455,7 +328,7 @@ const Cart = () => {
               {piLoading ? (
                 <>
                   <div className={styles.spinner}></div>
-                  Préparation en cours...
+                  Préparation...
                 </>
               ) : (
                 <>
@@ -478,15 +351,8 @@ const Cart = () => {
             <div className={styles.infoItem}>
               <div>🔒</div>
               <div>
-                <strong>Paiement 100% sécurisé</strong>
-                <p>Vous serez redirigé vers l'interface officielle Pi Network pour confirmer</p>
-              </div>
-            </div>
-            <div className={styles.infoItem}>
-              <div>⚡</div>
-              <div>
-                <strong>Transaction instantanée</strong>
-                <p>Le paiement est traité directement sur la blockchain Pi</p>
+                <strong>Paiement sécurisé</strong>
+                <p>Vous serez redirigé vers l'interface officielle Pi Network</p>
               </div>
             </div>
           </div>
@@ -503,7 +369,6 @@ const Cart = () => {
           <div className={styles.piInterfaceHeader}>
             <div className={styles.piLogoLarge}>π</div>
             <h3>Interface Pi Network ouverte</h3>
-            <p>Veuillez compléter le paiement dans la fenêtre Pi</p>
           </div>
 
           <div className={styles.interfaceStatus}>
@@ -512,110 +377,24 @@ const Cart = () => {
             </div>
             <div className={styles.interfaceMessage}>
               <p><strong>L'interface de paiement Pi est ouverte</strong></p>
-              <p>Confirmez le paiement de <strong>{cartTotalAmount.toFixed(2)} π</strong> dans la fenêtre Pi Network</p>
+              <p>Veuillez confirmer votre paiement de <strong>{cartTotalAmount.toFixed(2)} π</strong> dans la fenêtre Pi Network</p>
             </div>
           </div>
 
           {piStatus && (
             <div className={styles.interfaceStatusMessage}>
-              {piLoading && <div className={styles.spinner}></div>}
               {piStatus}
             </div>
           )}
 
           <div className={styles.interfaceHelp}>
-            <p>💡 <strong>Instructions :</strong></p>
+            <p>💡 <strong>Que se passe-t-il ?</strong></p>
             <ul>
-              <li>L'interface officielle Pi s'est ouverte dans une nouvelle fenêtre</li>
-              <li>Vérifiez le montant : <strong>{cartTotalAmount.toFixed(2)} π</strong></li>
-              <li>Acceptez les conditions d'utilisation</li>
-              <li>Cliquez sur "Payer" pour confirmer</li>
-              <li>Vous serez automatiquement redirigé ici après confirmation</li>
+              <li>L'interface officielle Pi s'est ouverte</li>
+              <li>Confirmez le montant et acceptez les conditions</li>
+              <li>Cliquez sur "Payer" dans l'interface Pi</li>
+              <li>Vous serez automatiquement redirigé ici</li>
             </ul>
-          </div>
-
-          <div className={styles.interfaceActions}>
-            <button
-              className={styles.secondaryButton}
-              onClick={() => resetPaymentFlow()}
-              disabled={piLoading}
-            >
-              Annuler le processus
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // MODAL 3: Erreur de permission
-  const PermissionErrorModal = () => (
-    <div className={styles.modalOverlay} onClick={() => resetPaymentFlow()}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <button 
-          className={styles.closeButton} 
-          onClick={() => resetPaymentFlow()}
-        >
-          <FaTimes />
-        </button>
-
-        <div className={styles.permissionContainer}>
-          <div className={styles.permissionHeader}>
-            <div className={styles.permissionIcon}><FaLock /></div>
-            <h3>Permission Requise</h3>
-            <p>Autorisez les paiements pour utiliser Pi Network</p>
-          </div>
-
-          <div className={styles.permissionSteps}>
-            <h4>Pour activer les paiements :</h4>
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>1</div>
-              <div className={styles.stepContent}>
-                <strong>Ouvrez le menu Pi Browser</strong>
-                <p>Cliquez sur les trois points (⋮) en haut à droite</p>
-              </div>
-            </div>
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>2</div>
-              <div className={styles.stepContent}>
-                <strong>Allez dans "Paramètres de l'application"</strong>
-                <p>Trouvez "SAPI Store" dans la liste des applications</p>
-              </div>
-            </div>
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>3</div>
-              <div className={styles.stepContent}>
-                <strong>Activez l'autorisation "Paiements"</strong>
-                <p>Cochez la permission pour autoriser les transactions</p>
-              </div>
-            </div>
-            <div className={styles.step}>
-              <div className={styles.stepNumber}>4</div>
-              <div className={styles.stepContent}>
-                <strong>Rechargez cette page</strong>
-                <p>Retournez ici et réessayez le paiement</p>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.permissionActions}>
-            <button
-              className={styles.primaryButton}
-              onClick={() => window.location.reload()}
-            >
-              🔄 Recharger la page
-            </button>
-            <button
-              className={styles.secondaryButton}
-              onClick={() => resetPaymentFlow()}
-            >
-              Retour au panier
-            </button>
-          </div>
-
-          <div className={styles.permissionHelp}>
-            <p>❓ <strong>Besoin d'aide ?</strong></p>
-            <p>Si le problème persiste, vérifiez que vous utilisez la dernière version de Pi Browser.</p>
           </div>
         </div>
       </div>
@@ -629,56 +408,34 @@ const Cart = () => {
   }, [cartItems, dispatch]);
 
   /* --------------------------------------------------------------
-     AFFICHAGE PANIER VIDE
+     RENDU PRINCIPAL
   -------------------------------------------------------------- */
   if (cartItems.length === 0) {
     return (
       <div className={styles.emptyCart}>
         <div className={styles.emptyContent}>
-          <div className={styles.emptyIcon}>
-            <FaShoppingBag />
-          </div>
+          <div className={styles.emptyIcon}><FaShoppingBag /></div>
           <h2>Votre panier est vide</h2>
-          <p>Ajoutez des produits extraordinaires pour commencer vos achats</p>
+          <p>Ajoutez des produits pour commencer</p>
           <Link to="/#products" className={styles.emptyButton}>
-            🛍️ Découvrir les produits
+            Continuer les achats
           </Link>
-          
-          {/* Afficher la dernière commande réussie */}
-          {localStorage.getItem('last_successful_order') && (
-            <div className={styles.lastOrderInfo}>
-              <p>📦 Votre dernière commande a été sauvegardée</p>
-              <button 
-                className={styles.viewOrderButton}
-                onClick={() => {
-                  const order = JSON.parse(localStorage.getItem('last_successful_order'));
-                  window.location.href = `/payment-success?order=${order.orderId}`;
-                }}
-              >
-                Voir les détails
-              </button>
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
-  /* --------------------------------------------------------------
-     RENDU PRINCIPAL
-  -------------------------------------------------------------- */
   return (
     <div className={styles.cartContainer}>
       <div className={styles.cartHeader}>
         <h1>Panier d'achat</h1>
-        <p>{cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''} dans votre panier</p>
+        <p>{cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''}</p>
       </div>
 
       <div className={styles.cartContent}>
-        {/* Liste des articles */}
         <div className={styles.cartItems}>
           <div className={styles.itemsHeader}>
-            <h3>Vos produits sélectionnés</h3>
+            <h3>Produits</h3>
             <button className={styles.clearButton} onClick={clearCart}>
               <FaTrashAlt /> Vider le panier
             </button>
@@ -727,24 +484,18 @@ const Cart = () => {
           ))}
         </div>
 
-        {/* Résumé de commande */}
         <div className={styles.cartSummary}>
           <div className={styles.summaryCard}>
             <h3>Résumé de commande</h3>
             
             <div className={styles.summaryRow}>
-              <span>Sous-total ({cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''})</span>
+              <span>Sous-total</span>
               <span>{currency} {cartTotalAmount.toFixed(2)}</span>
             </div>
             
             <div className={styles.summaryRow}>
-              <span>Frais de livraison</span>
+              <span>Livraison</span>
               <span className={styles.free}>Gratuite</span>
-            </div>
-            
-            <div className={styles.summaryRow}>
-              <span>Taxes</span>
-              <span>{currency} {(cartTotalAmount * 0).toFixed(2)}</span>
             </div>
             
             <div className={styles.summaryTotal}>
@@ -752,11 +503,9 @@ const Cart = () => {
               <span>{currency} {cartTotalAmount.toFixed(2)}</span>
             </div>
 
-            {/* Bouton de paiement Pi */}
             <button
               className={styles.checkoutButton}
               onClick={startPiPaymentFlow}
-              disabled={!isPiBrowser}
             >
               <span className={styles.piSymbol}>π</span>
               Payer {cartTotalAmount.toFixed(2)} Pi
@@ -774,12 +523,12 @@ const Cart = () => {
 
             <div className={styles.securityNote}>
               <span>🔒</span>
-              Paiement sécurisé par la blockchain Pi Network
+              Paiement sécurisé Pi Network
             </div>
           </div>
 
           <Link to="/#products" className={styles.continueLink}>
-            ← Continuer mes achats
+            Continuer les achats
           </Link>
         </div>
       </div>
@@ -787,7 +536,6 @@ const Cart = () => {
       {/* Modals de paiement */}
       {paymentFlow.showPreModal && <PreparationModal />}
       {paymentFlow.piInterfaceOpen && <PiInterfaceModal />}
-      {permissionError && <PermissionErrorModal />}
     </div>
   );
 };
