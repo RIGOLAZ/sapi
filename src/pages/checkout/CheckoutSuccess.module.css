@@ -1,0 +1,78 @@
+/* src/pages/checkout-success/CheckoutSuccess.module.css */
+.successContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.successContent {
+  text-align: center;
+  max-width: 500px;
+  background: white;
+  padding: 3rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.successIcon {
+  font-size: 4rem;
+  color: #10b981;
+  margin-bottom: 1rem;
+}
+
+.successMessage {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+
+.orderDetails {
+  background: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.successActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.continueShopping, .view-orders {
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.continueShopping {
+  background: #3b82f6;
+  color: white;
+}
+
+.viewOrders {
+  background: #6b7280;
+  color: white;
+}
+
+.continueShopping:hover, .view-orders:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

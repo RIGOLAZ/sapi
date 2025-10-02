@@ -11,6 +11,25 @@ export const usePiPayment = () => {
     setIsPiBrowser(!!window.Pi);
   }, []);
 
+  // Dans usePiPayment.js - Ajoutez cette fonction
+const checkForPiUpdates = () => {
+  // Vérifier périodiquement si le bug Pi est corrigé
+  setInterval(async () => {
+    try {
+      const testData = { amount: 0.01, memo: 'Test bug fix' };
+      const callbacks = {
+        onReadyForServerCompletion: () => {},
+        onCancel: () => {},
+        onError: () => {}
+      };
+      
+      await window.Pi.createPayment(testData, callbacks);
+      console.log('🎉 BUG PI CORRIGÉ! Les vrais paiements fonctionnent maintenant!');
+    } catch (error) {
+      // Bug toujours présent
+    }
+  }, 86400000); // Vérifier une fois par jour
+};
   // ✅ AUTHENTIFICATION FONCTIONNELLE
   const authenticate = async () => {
     console.log('🔐 Authentification Pi...');
