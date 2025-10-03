@@ -1,180 +1,80 @@
-import { useState, useEffect } from 'react';
+/*  usePiPayment.js  –  version 100 % conforme Pi Network  */
+import { useState } from "react";
 
-export const usePiPayment = () => {
-  const [isPiBrowser, setIsPiBrowser] = useState(false);
+const usePiPayment = () => {
+  const [isPiBrowser, setIsPiBrowser] = useState(!!window.Pi);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    setIsPiBrowser(!!window.Pi);
-  }, []);
-
-  // Dans usePiPayment.js - Ajoutez cette fonction
-const checkForPiUpdates = () => {
-  // Vérifier périodiquement si le bug Pi est corrigé
-  setInterval(async () => {
-    try {
-      const testData = { amount: 0.01, memo: 'Test bug fix' };
-      const callbacks = {
-        onReadyForServerCompletion: () => {},
-        onCancel: () => {},
-        onError: () => {}
-      };
-      
-      await window.Pi.createPayment(testData, callbacks);
-      console.log('🎉 BUG PI CORRIGÉ! Les vrais paiements fonctionnent maintenant!');
-    } catch (error) {
-      // Bug toujours présent
-    }
-  }, 86400000); // Vérifier une fois par jour
-};
-  // ✅ AUTHENTIFICATION FONCTIONNELLE
+  // Authentification Pi
   const authenticate = async () => {
-    console.log('🔐 Authentification Pi...');
-    
-    try {
-      await window.Pi.init({ version: "2.0" });
-
-      const scopes = ['payments', 'username'];
-      const onIncompletePaymentFound = (payment) => {
-        console.log('💰 Paiement incomplet:', payment);
-      };
-
-      const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
-      
-      console.log('✅ Authentifié:', authResult.user.username);
-      setUser(authResult.user);
-      setIsAuthenticated(true);
-      
-      return authResult;
-
-    } catch (error) {
-      console.error('❌ Erreur authentification:', error);
-      throw error;
-    }
-  };
-
-  // ✅ FONCTION DE PAIEMENT POUR PRODUCTION
-  const createPayment = async (amount, memo, metadata = {}) => {
-    console.log('🚀 Lancement paiement Pi');
-    
-    if (!window.Pi) {
-      throw new Error('Ouvrez dans Pi Browser');
-    }
-
     setLoading(true);
     setError(null);
-
+    // const scopes = ['payments', 'username'];
+    const scopes = ['payments'];
     try {
-      // Authentification d'abord
-      if (!isAuthenticated) {
-        await authenticate();
-      }
-
-      // Préparation données
-      const paymentData = {
-        amount: parseFloat(amount),
-        memo: memo,
-        metadata: {
-          ...metadata,
-          orderId: metadata.orderId || `order_${Date.now()}`,
-          timestamp: new Date().toISOString()
-        }
-      };
-
-      console.log('💳 Données paiement:', paymentData);
-
-      // ✅✅✅ TENTATIVE RÉELLE DE PAIEMENT ✅✅✅
-      console.log('🎯 Tentative création paiement Pi...');
-      
-      try {
-        // Essai avec callbacks comme objet
-        const callbacks = {
-          onReadyForServerCompletion: (paymentId, txid) => {
-            console.log('🎉 Paiement RÉEL réussi!', { paymentId, txid });
-            // Cette fonction sera appelée quand Pi corrigera le bug
-          },
-          onCancel: (paymentId) => {
-            console.log('❌ Paiement RÉEL annulé', paymentId);
-          },
-          onError: (error, paymentId) => {
-            console.error('💥 Erreur RÉELLE paiement', error, paymentId);
-          }
-        };
-
-        const payment = await window.Pi.createPayment(paymentData, callbacks);
-        console.log('✅✅✅ PAIEMENT RÉEL INITIÉ!', payment);
-        
-        // Si on arrive ici, le bug est corrigé !
-        return new Promise((resolve) => {
-          // On attend les callbacks réels
-          callbacks.onReadyForServerCompletion = (paymentId, txid) => {
-            resolve({
-              success: true,
-              paymentId,
-              txid,
-              orderId: paymentData.metadata.orderId,
-              amount: amount,
-              status: 'completed',
-              real: true // Indique que c'est un vrai paiement
-            });
-          };
-        });
-
-      } catch (callbackError) {
-        console.log('⚠️ Bug callbacks Pi toujours présent, utilisation mode simulation');
-        
-        // ✅ MODE SIMULATION (en attendant correction Pi)
-        return new Promise((resolve, reject) => {
-          // Simulation des fenêtres Pi
-          setTimeout(() => {
-            const mockResult = {
-              success: true,
-              paymentId: `pi_payment_${Date.now()}`,
-              txid: `tx_${Math.random().toString(36).substr(2, 9)}`,
-              orderId: paymentData.metadata.orderId,
-              amount: amount,
-              status: 'completed',
-              real: false, // Indique que c'est une simulation
-              message: 'Mode simulation - Bug callbacks Pi'
-            };
-            
-            console.log('🎉 Paiement simulé réussi:', mockResult);
-            resolve(mockResult);
-            
-          }, 3000);
-        });
-      }
-
-    } catch (error) {
-      console.error('❌ Erreur paiement:', error);
-      setError(error.message);
-      throw error;
+      const result = await window.Pi.authenticate(
+        scopes,
+        onIncompletePaymentFound
+      );
+      setIsAuthenticated(true);
+      setUser(result.user);
+      return result;
+    } catch (err) {
+      setError(err);
+      setIsAuthenticated(false);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ TEST SDK
-  const testSDK = async () => {
-    try {
-      await window.Pi.init({ version: "2.0" });
-      const authResult = await authenticate();
-      
-      return {
-        success: true,
-        authenticated: true,
-        user: authResult.user,
-        message: 'SDK Pi prêt - Bug callbacks connu'
-      };
+  // Callback paiement incomplet
+  const onIncompletePaymentFound = async (payment) => {
+    // Ici, tu peux gérer le paiement incomplet (ex: le valider côté serveur)
+    // fetch('/api/validate-payment', { ... })
+  };
 
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
+  // Création du paiement
+  const createPayment = async ({ amount, memo }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const payment = await window.Pi.createPayment({
+        amount,
+        memo,
+        metadata: { cart: "sapi" },
+        onReadyForServerApproval: async (paymentId) => {
+          // Appelle ton backend pour approuver le paiement
+          await fetch("/api/pi/approve", {
+            method: "POST",
+            body: JSON.stringify({ paymentId }),
+            headers: { "Content-Type": "application/json" },
+          });
+        },
+        onReadyForServerCompletion: async (paymentId, txid) => {
+          // Appelle ton backend pour compléter le paiement
+          await fetch("/api/pi/complete", {
+            method: "POST",
+            body: JSON.stringify({ paymentId, txid }),
+            headers: { "Content-Type": "application/json" },
+          });
+        },
+        onCancel: (paymentId) => {
+          setError("Paiement annulé");
+        },
+        onError: (error, payment) => {
+          setError(error);
+        },
+      });
+      return payment;
+    } catch (err) {
+      setError(err);
+      return null;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -184,7 +84,9 @@ const checkForPiUpdates = () => {
     error,
     isAuthenticated,
     user,
+    authenticate,
     createPayment,
-    testSDK
   };
 };
+
+export default usePiPayment;

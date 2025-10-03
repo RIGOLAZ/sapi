@@ -25,7 +25,8 @@ import {
   FaExclamationTriangle
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { usePiPayment } from "../../hooks/usePiPayment";
+import usePiPayment from "../../hooks/usePiPayment"
+import PiPaymentButton from "../../components/PiPaymentButton/PiPaymentButton";
 
 const Cart = () => {
   const cartItems = useSelector(selectCartItems);
@@ -35,7 +36,6 @@ const Cart = () => {
 
   const [piLoading, setPiLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, error
-  const [currentOrderId, setCurrentOrderId] = useState(null); // ✅ Correction: stocker l'orderId
 
   // Hook Pi Payment
   const { 
@@ -43,7 +43,7 @@ const Cart = () => {
     loading, 
     error, 
     createPayment,
-    testSDK,
+    setupPiCallbacks,
     isAuthenticated,
     user
   } = usePiPayment();
@@ -89,7 +89,7 @@ const Cart = () => {
   const saveOrderToLocalStorage = (orderData) => {
     try {
       const orders = JSON.parse(localStorage.getItem('sapi_orders') || '[]');
-      orders.unshift(orderData); // Ajouter au début
+      orders.unshift(orderData);
       localStorage.setItem('sapi_orders', JSON.stringify(orders));
       console.log('💾 Commande sauvegardée:', orderData.orderId);
     } catch (error) {
@@ -113,153 +113,9 @@ const Cart = () => {
   };
 
   /* --------------------------------------------------------------
-     PAIEMENT PI NETWORK - VERSION CORRIGÉE
+     PAIEMENT PI NETWORK - NOUVELLE APPROCHE
   -------------------------------------------------------------- */
-  const handlePiPayment = async () => {
-    console.log('🛒 Début du processus de paiement Pi');
-    
-    // Vérifications
-    if (!isPiBrowser) {
-      toast.info("📱 Ouvrez cette page dans l'application Pi Browser pour payer avec Pi", {
-        position: "bottom-right", 
-        autoClose: 6000 
-      });
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      toast.warning("🛒 Votre panier est vide", { 
-        position: "bottom-right",
-        autoClose: 3000 
-      });
-      return;
-    }
-
-    setPiLoading(true);
-    setPaymentStatus('processing');
-
-    // ✅ CORRECTION: Déclarer orderId au niveau de la fonction
-    const orderId = `CMD-${Date.now()}`;
-    setCurrentOrderId(orderId); // Stocker pour usage dans les callbacks
-
-    try {
-      const amount = cartTotalAmount.toFixed(2);
-      
-      // Préparation des métadonnées
-      const metadata = {
-        orderId: orderId,
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.cartQuantity,
-          price: item.price,
-          category: item.category
-        })),
-        totalItems: cartTotalQuantity,
-        totalAmount: amount,
-        currency: currency,
-        timestamp: new Date().toISOString()
-      };
-
-      const memo = `Achat de ${cartTotalQuantity} article(s) - ${amount} Pi`;
-
-      console.log('🎯 Commande créée:', orderId);
-      console.log('💰 Montant:', amount + ' Pi');
-
-      // Sauvegarde de la commande avant paiement
-      saveOrderToLocalStorage({
-        ...metadata,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      });
-
-      // Notification de début de paiement
-      toast.info('🚀 Initialisation du paiement Pi...', {
-        position: "bottom-right",
-        autoClose: 3000
-      });
-
-      // Appel du paiement
-      const paymentResult = await createPayment(amount, memo, metadata);
-      
-      console.log('✅✅✅ PAIEMENT RÉUSSI!', paymentResult);
-      setPaymentStatus('success');
-      
-      // Succès du paiement
-      toast.success(`🎉 Paiement réussi! Commande: ${orderId}`, {
-        position: "bottom-right",
-        autoClose: 5000 
-      });
-
-      // Mise à jour du statut de la commande
-      updateOrderStatus(orderId, 'completed', paymentResult);
-
-      // Vider le panier après un délai
-      setTimeout(() => {
-        dispatch(CLEAR_CART());
-        setCurrentOrderId(null); // Réinitialiser
-        
-        // Redirection vers la page de succès
-        window.location.href = `/checkout-success?order=${orderId}&txid=${paymentResult.txid}&amount=${amount}`;
-      }, 2000);
-
-    } catch (error) {
-      console.error('❌ Erreur de paiement:', error);
-      setPaymentStatus('error');
-      
-      // Gestion des erreurs utilisateur
-      let userMessage = 'Erreur lors du paiement';
-      
-      if (error.message.includes('annulé') || error.message.includes('cancel')) {
-        userMessage = 'Paiement annulé';
-      } else if (error.message.includes('Browser') || error.message.includes('Pi Browser')) {
-        userMessage = 'Ouvrez dans Pi Browser pour payer avec Pi';
-      } else if (error.message.includes('authentification')) {
-        userMessage = 'Problème d\'authentification Pi';
-      } else if (error.message.includes('solde') || error.message.includes('balance')) {
-        userMessage = 'Solde Pi insuffisant';
-      }
-
-      toast.error(`❌ ${userMessage}`, {
-        position: "bottom-right",
-        autoClose: 6000 
-      });
-
-      // ✅ CORRECTION: Utiliser orderId qui est maintenant défini
-      if (orderId) {
-        updateOrderStatus(orderId, 'failed', { error: error.message });
-      }
-
-    } finally {
-      setPiLoading(false);
-      // Réinitialiser le statut après un délai
-      setTimeout(() => {
-        setPaymentStatus('idle');
-        setCurrentOrderId(null);
-      }, 3000);
-    }
-  };
-
-  const testPiSDK = async () => {
-    toast.info('🧪 Test du SDK Pi en cours...', { 
-      position: "bottom-right",
-      autoClose: 3000 
-    });
-    
-    const result = await testSDK();
-    
-    if (result.success) {
-      toast.success(`✅ SDK Pi fonctionnel! Utilisateur: ${result.user.username}`, {
-        position: "bottom-right",
-        autoClose: 5000
-      });
-    } else {
-      toast.error(`❌ SDK Pi: ${result.error}`, {
-        position: "bottom-right", 
-        autoClose: 6000
-      });
-    }
-  };
+    const handlePiPayment = async () => {}
 
   /* --------------------------------------------------------------
      EFFETS
@@ -271,14 +127,6 @@ const Cart = () => {
   }, [cartItems, dispatch]);
 
   // Gestion des erreurs du hook
-  useEffect(() => {
-    if (error) {
-      toast.error(`Erreur Pi: ${error}`, {
-        position: "bottom-right",
-        autoClose: 5000
-      });
-    }
-  }, [error]);
 
   /* --------------------------------------------------------------
      AFFICHAGE PANIER VIDE
@@ -300,14 +148,6 @@ const Cart = () => {
 
           {/* Section debug */}
           <div className={styles.debugSection}>
-            <h4>🧪 Développement</h4>
-            <button 
-              onClick={testPiSDK}
-              className={styles.testButton}
-              disabled={!isPiBrowser}
-            >
-              Tester SDK Pi
-            </button>
             <div className={styles.debugInfo}>
               <span>Pi Browser: {isPiBrowser ? '✅ Détecté' : '❌ Non détecté'}</span>
               {isAuthenticated && <span>Utilisateur: {user?.username}</span>}
@@ -459,14 +299,24 @@ const Cart = () => {
                   <FaCheck />
                   Paiement réussi !
                 </>
+              ) : paymentStatus === 'processing' ? (
+                <>
+                  <span className={styles.spinner}></span>
+                  Confirmez dans Pi Wallet
+                </>
               ) : (
                 <>
-                  <span className={styles.piSymbol}>π</span>
                   Payer {cartTotalAmount.toFixed(2)} Pi
                 </>
               )}
             </button>
-
+            <PiPaymentButton
+              amount={cartTotalAmount.toFixed(2)}
+              memo={`Achat sur sapi.etralis.com`}
+              onSuccess={(payment) => {
+                // Sauvegarde la commande, affiche un modal, etc.
+              }}
+            />
             {/* MESSAGES INFORMATIFS */}
             <div className={styles.infoMessages}>
               {!isPiBrowser && (
@@ -494,7 +344,7 @@ const Cart = () => {
                   <div className={styles.processingSpinner}></div>
                   <div>
                     <strong>Paiement en cours</strong>
-                    <p>Ne quittez pas cette page</p>
+                    <p>Confirmez la transaction dans Pi Wallet</p>
                   </div>
                 </div>
               )}
@@ -508,15 +358,6 @@ const Cart = () => {
               </div>
               <p>Transactions cryptographiques via Pi Network</p>
             </div>
-
-            {/* BOUTON TEST */}
-            <button 
-              onClick={testPiSDK}
-              className={styles.testButton}
-              disabled={!isPiBrowser}
-            >
-              🧪 Tester SDK Pi
-            </button>
           </div>
 
           {/* LIEN CONTINUER LES ACHATS */}
