@@ -35,10 +35,14 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "dev": "vite --host 0.0.0.0 --port 3000",
+     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "npm run build && firebase deploy",
+    "deploy-functions": "node scripts/deploy-functions.js",
+    "deploy-all": "npm run build && firebase deploy",
     "deploy:hosting": "firebase deploy --only hosting",
     "check:validation": "ls -la build/validation-key.txt && echo 'File content:' && cat build/validation-key.txt",
     "check:domain": "firebase hosting:site:get"

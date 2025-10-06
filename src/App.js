@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { PiProvider } from "./context/PiContext.js";
 // Pages
 import { Home, Contact, Login, Register, Reset, Admin } from "./pages";
 // Components
@@ -17,16 +18,12 @@ import StoreMap from "./components/storeMap/StoreMap";
 
 function App() {
   return (
-    <>
+    <PiProvider>
       <BrowserRouter>
         <ToastContainer />
         <Header />
         <Routes>
-          <Route path="/validation-key.txt" element={() => {
-            window.location.href = "/validation-key.txt";
-            return null;
-          }} />
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} /> {/* ← ROUTE RACINE OBLIGATOIRE */}
           <Route path="/contact" element={<Contact />} />
           <Route path="/stores" element={<StoreMap />} />
           <Route path="/login" element={<Login />} />
@@ -46,11 +43,11 @@ function App() {
           <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/order-details/:id" element={<OrderDetails />} />
           <Route path="/review-product/:id" element={<ReviewProducts />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} /> {/* ← Catch-all route */}
         </Routes>
         <Footer />
       </BrowserRouter>
-    </>
+    </PiProvider>
   );
 }
 

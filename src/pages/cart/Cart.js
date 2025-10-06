@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import { currency } from "..";
+import { usePiDetection } from '../../hooks/usePiDetection.js';
 import {
   ADD_TO_CART,
   CALCULATE_SUBTOTAL,
@@ -13,7 +14,7 @@ import {
   selectCartItems,
   selectCartTotalAmount,
   selectCartTotalQuantity,
-} from "../../redux/slice/cartSlice";
+} from "../../redux/slice/cartSlice.js";
 import styles from "./Cart.module.css";
 import { 
   FaTrashAlt, 
@@ -25,32 +26,34 @@ import {
   FaExclamationTriangle
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import usePiPayment from "../../hooks/usePiPayment"
-import PiPaymentButton from "../../components/PiPaymentButton/PiPaymentButton";
+import { usePiPayment } from "../../hooks/usePiPayment.js";
+import { usePiAuth } from "../../hooks/usePiAuth.js";
 
 const Cart = () => {
+  const { isPiBrowser, isPiLoaded } = usePiDetection();
   const cartItems = useSelector(selectCartItems);
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
   const dispatch = useDispatch();
 
   const [piLoading, setPiLoading] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, error
+  const [paymentStatus, setPaymentStatus] = useState('idle');
 
-  // Hook Pi Payment
+  // Hooks Pi Network
   const { 
-    isPiBrowser, 
-    loading, 
-    error, 
-    createPayment,
-    setupPiCallbacks,
-    isAuthenticated,
-    user
+    initiatePayment, 
+    isProcessing, 
+    paymentError,
+    currentPayment 
   } = usePiPayment();
 
-  /* --------------------------------------------------------------
-     FONCTIONS DU PANIER
-  -------------------------------------------------------------- */
+  const {
+    piUser,
+    isAuthenticated,
+    authenticatePi,
+  } = usePiAuth();
+
+  // Fonctions du panier
   const increaseCart = (cart) => {
     dispatch(ADD_TO_CART(cart));
     toast.success(`${cart.name} ajouté au panier`, { 
@@ -83,9 +86,11 @@ const Cart = () => {
     });
   };
 
-  /* --------------------------------------------------------------
-     FONCTIONS UTILITAIRES
-  -------------------------------------------------------------- */
+  // Fonctions utilitaires
+  const generateOrderId = () => {
+    return `SAPI_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  };
+
   const saveOrderToLocalStorage = (orderData) => {
     try {
       const orders = JSON.parse(localStorage.getItem('sapi_orders') || '[]');
@@ -97,40 +102,106 @@ const Cart = () => {
     }
   };
 
-  const updateOrderStatus = (orderId, status, additionalData = {}) => {
+  // Paiement Pi Network
+  const handlePiPayment = async () => {
+    if (!isPiBrowser) {
+      toast.error("Veuillez ouvrir dans Pi Browser", {
+        position: "bottom-right"
+      });
+      return;
+    }
+
+    if (!isAuthenticated) {
+      try {
+        await authenticatePi();
+        return;
+      } catch (error) {
+        toast.error("Échec de l'authentification Pi", {
+          position: "bottom-right"
+        });
+        return;
+      }
+    }
+
+    setPiLoading(true);
+    setPaymentStatus('processing');
+
     try {
-      const orders = JSON.parse(localStorage.getItem('sapi_orders') || '[]');
-      const updatedOrders = orders.map(order => 
-        order.orderId === orderId 
-          ? { ...order, status, ...additionalData, updatedAt: new Date().toISOString() }
-          : order
-      );
-      localStorage.setItem('sapi_orders', JSON.stringify(updatedOrders));
-      console.log('📝 Statut commande mis à jour:', orderId, status);
+      const orderId = generateOrderId();
+      
+      const paymentData = {
+        amount: cartTotalAmount,
+        memo: `Commande SAPI - ${orderId}`,
+        metadata: {
+          orderId: orderId,
+          items: cartItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.cartQuantity,
+            price: item.price
+          })),
+          totalAmount: cartTotalAmount,
+          totalQuantity: cartTotalQuantity,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      const orderData = {
+        orderId,
+        items: cartItems,
+        totalAmount: cartTotalAmount,
+        totalQuantity: cartTotalQuantity,
+        status: 'pending_payment',
+        paymentMethod: 'pi_network',
+        createdAt: new Date().toISOString()
+      };
+      
+      saveOrderToLocalStorage(orderData);
+      await initiatePayment(paymentData);
+      
     } catch (error) {
-      console.error('❌ Erreur mise à jour statut:', error);
+      console.error('❌ Erreur paiement Pi:', error);
+      setPaymentStatus('error');
+      toast.error(`Erreur paiement: ${error.message}`, {
+        position: "bottom-right"
+      });
+    } finally {
+      setPiLoading(false);
     }
   };
 
-  /* --------------------------------------------------------------
-     PAIEMENT PI NETWORK - NOUVELLE APPROCHE
-  -------------------------------------------------------------- */
-    const handlePiPayment = async () => {}
+  // Gérer les erreurs de paiement
+  useEffect(() => {
+    if (paymentError) {
+      setPaymentStatus('error');
+      toast.error(`Erreur paiement: ${paymentError}`, {
+        position: "bottom-right"
+      });
+    }
+  }, [paymentError]);
 
-  /* --------------------------------------------------------------
-     EFFETS
-  -------------------------------------------------------------- */
+  // Gérer les paiements réussis
+  useEffect(() => {
+    if (currentPayment && currentPayment.status === 'completed') {
+      setPaymentStatus('success');
+      toast.success("Paiement réussi !", {
+        position: "bottom-right"
+      });
+      
+      setTimeout(() => {
+        dispatch(CLEAR_CART());
+      }, 2000);
+    }
+  }, [currentPayment, dispatch]);
+
+  // Calculer le sous-total et la quantité
   useEffect(() => {
     dispatch(CALCULATE_SUBTOTAL());
     dispatch(CALCULATE_TOTAL_QUANTITY());
     dispatch(SAVE_URL(""));
   }, [cartItems, dispatch]);
 
-  // Gestion des erreurs du hook
-
-  /* --------------------------------------------------------------
-     AFFICHAGE PANIER VIDE
-  -------------------------------------------------------------- */
+  // Panier vide
   if (cartItems.length === 0) {
     return (
       <div className={styles.emptyCart}>
@@ -146,11 +217,10 @@ const Cart = () => {
             Découvrir les produits
           </Link>
 
-          {/* Section debug */}
           <div className={styles.debugSection}>
             <div className={styles.debugInfo}>
               <span>Pi Browser: {isPiBrowser ? '✅ Détecté' : '❌ Non détecté'}</span>
-              {isAuthenticated && <span>Utilisateur: {user?.username}</span>}
+              {isAuthenticated && <span>Utilisateur: {piUser?.username}</span>}
             </div>
           </div>
         </div>
@@ -158,12 +228,9 @@ const Cart = () => {
     );
   }
 
-  /* --------------------------------------------------------------
-     RENDU PRINCIPAL
-  -------------------------------------------------------------- */
   return (
     <div className={styles.cartContainer}>
-      {/* EN-TÊTE */}
+      {/* En-tête */}
       <div className={styles.cartHeader}>
         <div className={styles.headerContent}>
           <h1>
@@ -175,22 +242,21 @@ const Cart = () => {
           </p>
         </div>
         
-        {/* STATUT PI */}
         <div className={styles.piStatus}>
           <div className={`${styles.statusIndicator} ${isPiBrowser ? styles.connected : styles.disconnected}`}>
             {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser'}
           </div>
           {isAuthenticated && (
             <div className={styles.userInfo}>
-              <span>Connecté: {user?.username}</span>
+              <span>Connecté: {piUser?.username}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* CONTENU PRINCIPAL */}
+      {/* Contenu principal */}
       <div className={styles.cartContent}>
-        {/* SECTION ARTICLES */}
+        {/* Section articles */}
         <div className={styles.cartItems}>
           <div className={styles.itemsHeader}>
             <h2>Produits sélectionnés</h2>
@@ -207,19 +273,16 @@ const Cart = () => {
           <div className={styles.itemsList}>
             {cartItems.map((item) => (
               <div key={item.id} className={styles.cartItem}>
-                {/* Image */}
                 <div className={styles.itemImage}>
                   <img src={item.imageURL} alt={item.name} />
                 </div>
                 
-                {/* Informations */}
                 <div className={styles.itemInfo}>
                   <h3 className={styles.itemName}>{item.name}</h3>
                   <p className={styles.itemCategory}>{item.category}</p>
                   <p className={styles.itemPrice}>{currency} {item.price}</p>
                 </div>
 
-                {/* Contrôles quantité */}
                 <div className={styles.itemControls}>
                   <button
                     className={styles.controlBtn}
@@ -239,12 +302,10 @@ const Cart = () => {
                   </button>
                 </div>
 
-                {/* Total article */}
                 <div className={styles.itemTotal}>
                   {currency} {(item.price * item.cartQuantity).toFixed(2)}
                 </div>
 
-                {/* Suppression */}
                 <button
                   className={styles.removeBtn}
                   onClick={() => removeFromCart(item)}
@@ -257,7 +318,7 @@ const Cart = () => {
           </div>
         </div>
 
-        {/* SECTION RÉSUMÉ */}
+        {/* Section résumé */}
         <div className={styles.cartSummary}>
           <div className={styles.summaryCard}>
             <h2>Résumé de la commande</h2>
@@ -281,15 +342,17 @@ const Cart = () => {
               </div>
             </div>
 
-            {/* BOUTON PAIEMENT PI */}
+            {/* Bouton paiement Pi */}
             <button
               className={`${styles.checkoutButton} ${
-                !isPiBrowser || piLoading || loading ? styles.disabled : ''
-              } ${paymentStatus === 'success' ? styles.success : ''}`}
+                !isPiBrowser || piLoading || isProcessing ? styles.disabled : ''
+              } ${paymentStatus === 'success' ? styles.success : ''} ${
+                paymentStatus === 'error' ? styles.error : ''
+              }`}
               onClick={handlePiPayment}
-              disabled={!isPiBrowser || piLoading || loading}
+              disabled={!isPiBrowser || piLoading || isProcessing}
             >
-              {piLoading || loading ? (
+              {piLoading || isProcessing ? (
                 <>
                   <span className={styles.spinner}></span>
                   Traitement en cours...
@@ -299,25 +362,23 @@ const Cart = () => {
                   <FaCheck />
                   Paiement réussi !
                 </>
-              ) : paymentStatus === 'processing' ? (
+              ) : paymentStatus === 'error' ? (
                 <>
-                  <span className={styles.spinner}></span>
-                  Confirmez dans Pi Wallet
+                  <FaExclamationTriangle />
+                  Erreur de paiement
+                </>
+              ) : !isAuthenticated ? (
+                <>
+                  Se connecter avec Pi
                 </>
               ) : (
                 <>
-                  Payer {cartTotalAmount.toFixed(2)} Pi
+                  Payer {cartTotalAmount.toFixed(2)} π
                 </>
               )}
             </button>
-            <PiPaymentButton
-              amount={cartTotalAmount.toFixed(2)}
-              memo={`Achat sur sapi.etralis.com`}
-              onSuccess={(payment) => {
-                // Sauvegarde la commande, affiche un modal, etc.
-              }}
-            />
-            {/* MESSAGES INFORMATIFS */}
+
+            {/* Messages informatifs */}
             <div className={styles.infoMessages}>
               {!isPiBrowser && (
                 <div className={styles.infoMessage}>
@@ -334,12 +395,12 @@ const Cart = () => {
                   <FaExclamationTriangle />
                   <div>
                     <strong>Authentification requise</strong>
-                    <p>Vous serez invité à vous connecter avec Pi</p>
+                    <p>Vous serez invité à vous connecter avec Pi Network</p>
                   </div>
                 </div>
               )}
 
-              {paymentStatus === 'processing' && (
+              {(piLoading || isProcessing) && (
                 <div className={styles.infoMessage}>
                   <div className={styles.processingSpinner}></div>
                   <div>
@@ -348,9 +409,19 @@ const Cart = () => {
                   </div>
                 </div>
               )}
+
+              {paymentError && (
+                <div className={styles.infoMessage}>
+                  <FaExclamationTriangle />
+                  <div>
+                    <strong>Erreur de paiement</strong>
+                    <p>{paymentError}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* NOTE DE SÉCURITÉ */}
+            {/* Note de sécurité */}
             <div className={styles.securityNote}>
               <div className={styles.securityHeader}>
                 <FaCheck />
@@ -360,7 +431,7 @@ const Cart = () => {
             </div>
           </div>
 
-          {/* LIEN CONTINUER LES ACHATS */}
+          {/* Lien continuer les achats */}
           <Link to="/#products" className={styles.continueLink}>
             <FaShoppingBag />
             Continuer mes achats

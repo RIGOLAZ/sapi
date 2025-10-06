@@ -1,5 +1,6 @@
 // Import ES6 nécessaires
 import { initializeApp } from 'firebase/app';
+import { getFunctions } from 'firebase/functions';
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -59,6 +60,8 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const realtimeDb = getDatabase(app); // ✅ Maintenant défini
 export const storage = getStorage(app);
+export const functions = getFunctions(app); // ← AJOUTEZ CETTE LIGNE
+
 
 
 // Export des providers et utilitaires
