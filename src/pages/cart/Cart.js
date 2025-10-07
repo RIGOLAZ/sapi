@@ -23,11 +23,65 @@ import {
   FaShoppingBag, 
   FaTimes,
   FaCheck,
-  FaExclamationTriangle
+  FaExclamationTriangle,
+  FaLock,
+  FaUserCheck
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { usePiPayment } from "../../hooks/usePiPayment.js";
 import { usePiAuth } from "../../hooks/usePiAuth.js";
+
+// Composant de débogage Pi Browser
+const PiBrowserDebug = () => {
+  const { isPiBrowser, isProduction, sdkLoaded, isAuthenticated, user } = usePiPayment();
+
+  return (
+    <div className={styles.debugPanel}>
+      <h4>🐛 Debug Pi Browser</h4>
+      <div className={styles.debugGrid}>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>📍 Domaine:</span>
+          <span className={styles.debugValue}>{window.location.hostname}</span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🌍 Environnement:</span>
+          <span className={`${styles.debugValue} ${isProduction ? styles.prod : styles.sandbox}`}>
+            {isProduction ? 'PRODUCTION' : 'SANDBOX'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>📱 Pi Browser:</span>
+          <span className={isPiBrowser ? styles.success : styles.error}>
+            {isPiBrowser ? '✅ Détecté' : '❌ Non détecté'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🔧 SDK Pi:</span>
+          <span className={sdkLoaded ? styles.success : styles.error}>
+            {sdkLoaded ? '✅ Chargé' : '❌ Non chargé'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🔐 Authentifié:</span>
+          <span className={isAuthenticated ? styles.success : styles.error}>
+            {isAuthenticated ? '✅ Oui' : '❌ Non'}
+          </span>
+        </div>
+        {isAuthenticated && (
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>👤 Utilisateur:</span>
+            <span className={styles.debugValue}>{user?.username}</span>
+          </div>
+        )}
+      </div>
+      {!isPiBrowser && isProduction && (
+        <div className={styles.debugWarning}>
+          ⚠️ Ouvrez cette page dans l'application Pi Browser pour effectuer un paiement
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Cart = () => {
   const { isPiBrowser, isPiLoaded } = usePiDetection();
@@ -52,6 +106,24 @@ const Cart = () => {
     isAuthenticated,
     authenticatePi,
   } = usePiAuth();
+
+  // Effets de diagnostic en production
+  useEffect(() => {
+    if (window.location.hostname === 'sapi.etralis.com') {
+      console.log('🔍 DIAGNOSTIC PRODUCTION PI BROWSER:');
+      console.log('📍 URL:', window.location.href);
+      console.log('📱 Pi SDK disponible:', !!window.Pi);
+      console.log('🔧 Pi SDK version:', window.Pi?.version);
+      console.log('👤 User Agent:', navigator.userAgent);
+      
+      if (window.Pi) {
+        console.log('✅ SDK Pi chargé avec succès');
+        console.log('📋 Méthodes disponibles:', Object.keys(window.Pi));
+      } else {
+        console.log('❌ SDK Pi NON chargé en production');
+      }
+    }
+  }, []);
 
   // Fonctions du panier
   const increaseCart = (cart) => {
@@ -105,7 +177,7 @@ const Cart = () => {
   // Paiement Pi Network
   const handlePiPayment = async () => {
     if (!isPiBrowser) {
-      toast.error("Veuillez ouvrir dans Pi Browser", {
+      toast.error("Veuillez ouvrir dans Pi Browser pour effectuer le paiement", {
         position: "bottom-right"
       });
       return;
@@ -114,6 +186,7 @@ const Cart = () => {
     if (!isAuthenticated) {
       try {
         await authenticatePi();
+        // L'authentification réussie déclenchera un re-render
         return;
       } catch (error) {
         toast.error("Échec de l'authentification Pi", {
@@ -148,12 +221,13 @@ const Cart = () => {
 
       const orderData = {
         orderId,
-        items: cartItems,
+        items: [...cartItems],
         totalAmount: cartTotalAmount,
         totalQuantity: cartTotalQuantity,
         status: 'pending_payment',
         paymentMethod: 'pi_network',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        piUser: piUser?.username
       };
       
       saveOrderToLocalStorage(orderData);
@@ -174,9 +248,6 @@ const Cart = () => {
   useEffect(() => {
     if (paymentError) {
       setPaymentStatus('error');
-      toast.error(`Erreur paiement: ${paymentError}`, {
-        position: "bottom-right"
-      });
     }
   }, [paymentError]);
 
@@ -184,13 +255,16 @@ const Cart = () => {
   useEffect(() => {
     if (currentPayment && currentPayment.status === 'completed') {
       setPaymentStatus('success');
-      toast.success("Paiement réussi !", {
-        position: "bottom-right"
+      toast.success("🎉 Paiement réussi ! Votre commande est confirmée.", {
+        position: "bottom-right",
+        autoClose: 5000
       });
       
+      // Vider le panier après un délai
       setTimeout(() => {
         dispatch(CLEAR_CART());
-      }, 2000);
+        setPaymentStatus('idle');
+      }, 3000);
     }
   }, [currentPayment, dispatch]);
 
@@ -217,10 +291,17 @@ const Cart = () => {
             Découvrir les produits
           </Link>
 
-          <div className={styles.debugSection}>
-            <div className={styles.debugInfo}>
-              <span>Pi Browser: {isPiBrowser ? '✅ Détecté' : '❌ Non détecté'}</span>
-              {isAuthenticated && <span>Utilisateur: {piUser?.username}</span>}
+          {/* Section debug réduite */}
+          <div className={styles.miniDebug}>
+            <div className={styles.debugStatus}>
+              <span className={isPiBrowser ? styles.statusOk : styles.statusError}>
+                Pi Browser: {isPiBrowser ? '✅' : '❌'}
+              </span>
+              {isAuthenticated && (
+                <span className={styles.userMini}>
+                  <FaUserCheck /> {piUser?.username}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -233,7 +314,7 @@ const Cart = () => {
       {/* En-tête */}
       <div className={styles.cartHeader}>
         <div className={styles.headerContent}>
-          <h1>
+          <h1 className={styles.title}>
             <FaShoppingBag />
             Panier d'achat
           </h1>
@@ -244,15 +325,19 @@ const Cart = () => {
         
         <div className={styles.piStatus}>
           <div className={`${styles.statusIndicator} ${isPiBrowser ? styles.connected : styles.disconnected}`}>
-            {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser'}
+            {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser requis'}
           </div>
           {isAuthenticated && (
             <div className={styles.userInfo}>
+              <FaUserCheck />
               <span>Connecté: {piUser?.username}</span>
             </div>
           )}
         </div>
       </div>
+
+      {/* Debug Panel (optionnel - peut être masqué en production) */}
+      {process.env.NODE_ENV === 'development' && <PiBrowserDebug />}
 
       {/* Contenu principal */}
       <div className={styles.cartContent}>
@@ -285,7 +370,7 @@ const Cart = () => {
 
                 <div className={styles.itemControls}>
                   <button
-                    className={styles.controlBtn}
+                    className={`${styles.controlBtn} ${item.cartQuantity <= 1 ? styles.disabled : ''}`}
                     onClick={() => decreaseCart(item)}
                     disabled={item.cartQuantity <= 1}
                     title="Réduire la quantité"
@@ -348,7 +433,7 @@ const Cart = () => {
                 !isPiBrowser || piLoading || isProcessing ? styles.disabled : ''
               } ${paymentStatus === 'success' ? styles.success : ''} ${
                 paymentStatus === 'error' ? styles.error : ''
-              }`}
+              } ${!isAuthenticated ? styles.authRequired : ''}`}
               onClick={handlePiPayment}
               disabled={!isPiBrowser || piLoading || isProcessing}
             >
@@ -365,14 +450,16 @@ const Cart = () => {
               ) : paymentStatus === 'error' ? (
                 <>
                   <FaExclamationTriangle />
-                  Erreur de paiement
+                  Réessayer le paiement
                 </>
               ) : !isAuthenticated ? (
                 <>
+                  <FaUserCheck />
                   Se connecter avec Pi
                 </>
               ) : (
                 <>
+                  <FaLock />
                   Payer {cartTotalAmount.toFixed(2)} π
                 </>
               )}
@@ -381,7 +468,7 @@ const Cart = () => {
             {/* Messages informatifs */}
             <div className={styles.infoMessages}>
               {!isPiBrowser && (
-                <div className={styles.infoMessage}>
+                <div className={`${styles.infoMessage} ${styles.warning}`}>
                   <FaExclamationTriangle />
                   <div>
                     <strong>Pi Browser requis</strong>
@@ -391,8 +478,8 @@ const Cart = () => {
               )}
 
               {isPiBrowser && !isAuthenticated && (
-                <div className={styles.infoMessage}>
-                  <FaExclamationTriangle />
+                <div className={`${styles.infoMessage} ${styles.info}`}>
+                  <FaUserCheck />
                   <div>
                     <strong>Authentification requise</strong>
                     <p>Vous serez invité à vous connecter avec Pi Network</p>
@@ -401,7 +488,7 @@ const Cart = () => {
               )}
 
               {(piLoading || isProcessing) && (
-                <div className={styles.infoMessage}>
+                <div className={`${styles.infoMessage} ${styles.processing}`}>
                   <div className={styles.processingSpinner}></div>
                   <div>
                     <strong>Paiement en cours</strong>
@@ -411,7 +498,7 @@ const Cart = () => {
               )}
 
               {paymentError && (
-                <div className={styles.infoMessage}>
+                <div className={`${styles.infoMessage} ${styles.error}`}>
                   <FaExclamationTriangle />
                   <div>
                     <strong>Erreur de paiement</strong>
@@ -424,10 +511,10 @@ const Cart = () => {
             {/* Note de sécurité */}
             <div className={styles.securityNote}>
               <div className={styles.securityHeader}>
-                <FaCheck />
-                <strong>Paiement sécurisé</strong>
+                <FaLock />
+                <strong>Paiement 100% sécurisé</strong>
               </div>
-              <p>Transactions cryptographiques via Pi Network</p>
+              <p>Transactions cryptographiques via le réseau Pi Blockchain</p>
             </div>
           </div>
 

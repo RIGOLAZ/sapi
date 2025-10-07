@@ -1,0 +1,36 @@
+/* Ajoutez ces styles aux existants */
+
+.piPaymentButton.success {
+  background: linear-gradient(135deg, #10B981, #059669);
+}
+
+.piPaymentButton.success:hover:not(.disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.piPaymentButton.error {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+}
+
+.piPaymentButton.error:hover:not(.disabled) {
+  background: linear-gradient(135deg, #DC2626, #B91C1C);
+}
+
+.successIcon {
+  color: #10B981;
+}
+
+.errorIcon {
+  color: #EF4444;
+}
+
+/* Animation de succès */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.piPaymentButton.success .buttonContent {
+  animation: pulse 2s infinite;
+}
