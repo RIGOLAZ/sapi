@@ -1,191 +1,134 @@
-// functions/index.js - VERSION CORRIGÉE ES6
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { config } from 'dotenv';
+import functions from 'firebase-functions';
+import admin from 'firebase-admin';
+import axios from 'axios';
 
-// Charger les variables d'environnement
-config();
+admin.initializeApp();
 
-// Initialisation de l'application Firebase Admin
-initializeApp();
-const db = getFirestore();
-
-// Configuration Pi Network - Utilisez vos vraies valeurs
-const PI_APP_ID = process.env.PI_APP_ID || "sapi-460615d940fecab6";
-const PI_APP_SECRET = process.env.PI_APP_SECRET || "0x3ttwrskfwjcloygyng30kzhx2ph6hrp3fnwt3mbunlmejffk87hqystybtjpg1";
-const PI_NETWORK_API_URL = 'https://api.minepi.com/v2';
-
-console.log('🔧 Configuration Pi Network chargée');
-
-// Helper pour les appels API Pi Network
-const piNetworkRequest = async (endpoint, method = 'GET', body = null) => {
-    const url = `${PI_NETWORK_API_URL}${endpoint}`;
-    
-    console.log(`🌐 Appel API Pi: ${method} ${url}`);
-    
-    const options = {
-        method,
-        headers: {
-            'Authorization': `Key ${PI_APP_SECRET}`,
-            'Content-Type': 'application/json'
-        }
-    };
-
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
-
-    try {
-        const response = await fetch(url, options);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('❌ Erreur API Pi Network:', error);
-        throw error;
-    }
+// Configuration CORS
+const handleCors = (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return true;
+  }
+  return false;
 };
 
-/**
- * Fonction pour approuver un paiement Pi Network
- * Déclenchée par le callback `onReadyForServerApproval`
- */
-export const approvePayment = onCall(async (request) => {
-    console.log('🔔 Fonction approvePayment appelée');
+// Fonction d'approbation - HTTP SANS authentification
+export const approvePayment = functions.https.onRequest(async (req, res) => {
+  if (handleCors(req, res)) return;
+
+  try {
+    const { paymentId } = req.body;
     
-    // ⚠️ TEMPORAIREMENT - Sans authentification pour tester
-    // if (!request.auth) {
-    //     throw new HttpsError('unauthenticated', 'Authentication required');
-    // }
-
-    const { paymentId, paymentData } = request.data;
-    console.log('📦 Données reçues:', { paymentId });
-
     if (!paymentId) {
-        throw new HttpsError('invalid-argument', 'Payment ID is required');
+      return res.status(400).json({ error: 'Payment ID required' });
     }
 
-    try {
-        console.log('🚀 Appel API Pi Network pour approbation...');
-        
-        // Appeler l'API Pi pour approuver le paiement
-        const approval = await piNetworkRequest(`/payments/${paymentId}/approve`, 'POST');
-        console.log('✅ Approbation Pi réussie');
-        
-        // Enregistrer dans Firestore
-        const paymentDoc = {
-            paymentId,
-            userId: request.auth?.uid || 'pi-user', // User ID Pi
-            status: 'approved',
-            amount: paymentData?.amount,
-            metadata: paymentData?.metadata,
-            approvedAt: new Date().toISOString(),
-            orderId: paymentData?.metadata?.orderId
-        };
+    console.log('🔄 Approbation paiement:', paymentId);
 
-        await db.collection('pi_payments').doc(paymentId).set(paymentDoc, { merge: true });
-        console.log('💾 Paiement sauvegardé dans Firestore');
-
-        return { 
-            success: true, 
-            paymentId,
-            message: 'Payment approved successfully'
-        };
-
-    } catch (error) {
-        console.error('❌ Erreur approbation paiement:', error);
-        
-        // Enregistrer l'erreur
-        await db.collection('pi_payments').doc(paymentId).set({
-            paymentId,
-            userId: request.auth?.uid || 'pi-user',
-            status: 'approval_failed',
-            error: error.message,
-            failedAt: new Date().toISOString()
-        }, { merge: true });
-
-        throw new HttpsError('internal', `Payment approval failed: ${error.message}`);
+    // Récupérer la clé API Pi
+    const piApiKey = process.env.PI_API_KEY || functions.config().pi.api_key;
+    
+    if (!piApiKey) {
+      throw new Error('Clé API Pi non configurée');
     }
+
+    console.log('🔑 Utilisation clé API Pi');
+    
+    // Appeler l'API Pi
+    const response = await axios.post(
+      `https://api.minepi.com/v2/payments/${paymentId}/approve`,
+      {},
+      {
+        headers: {
+          'Authorization': `Key ${piApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+
+    console.log('✅ Paiement approuvé:', paymentId);
+    
+    res.json({ 
+      success: true, 
+      data: response.data,
+      paymentId
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur approbation:', error.response?.data || error.message);
+    
+    res.status(500).json({ 
+      success: false,
+      error: 'Payment approval failed',
+      details: error.response?.data || error.message
+    });
+  }
 });
 
-/**
- * Fonction pour finaliser un paiement Pi Network
- * Déclenchée par le callback `onReadyForServerCompletion`
- */
-export const completePayment = onCall(async (request) => {
-    console.log('🔔 Fonction completePayment appelée');
+// Fonction de complétion - HTTP SANS authentification
+export const completePayment = functions.https.onRequest(async (req, res) => {
+  if (handleCors(req, res)) return;
+
+  try {
+    const { paymentId, txid } = req.body;
     
-    // ⚠️ TEMPORAIREMENT - Sans authentification pour tester
-    // if (!request.auth) {
-    //     throw new HttpsError('unauthenticated', 'Authentication required');
-    // }
-
-    const { paymentId, txid, paymentData } = request.data;
-    console.log('📦 Données reçues:', { paymentId, txid });
-
     if (!paymentId || !txid) {
-        throw new HttpsError('invalid-argument', 'Payment ID and TXID are required');
+      return res.status(400).json({ error: 'Payment ID and TXID required' });
     }
 
-    try {
-        console.log('🚀 Finalisation du paiement...');
-        
-        // Appeler l'API Pi pour finaliser le paiement
-        const completion = await piNetworkRequest(`/payments/${paymentId}/complete`, 'POST', { txid });
-        console.log('✅ Paiement finalisé');
+    console.log('🔄 Complétion paiement:', paymentId, txid);
 
-        // Mettre à jour dans Firestore
-        await db.collection('pi_payments').doc(paymentId).update({
-            status: 'completed',
-            txid,
-            completedAt: new Date().toISOString(),
-            completionData: completion
-        });
-
-        return { 
-            success: true, 
-            paymentId,
-            txid,
-            message: 'Payment completed successfully'
-        };
-
-    } catch (error) {
-        console.error('❌ Erreur finalisation paiement:', error);
-        throw new HttpsError('internal', `Payment completion failed: ${error.message}`);
+    const piApiKey = process.env.PI_API_KEY || functions.config().pi.api_key;
+    
+    if (!piApiKey) {
+      throw new Error('Clé API Pi non configurée');
     }
+
+    const response = await axios.post(
+      `https://api.minepi.com/v2/payments/${paymentId}/complete`,
+      { txid },
+      {
+        headers: {
+          'Authorization': `Key ${piApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+
+    console.log('✅ Paiement complété:', paymentId);
+    
+    res.json({ 
+      success: true, 
+      data: response.data,
+      paymentId,
+      txid
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur complétion:', error.response?.data || error.message);
+    
+    res.status(500).json({ 
+      success: false,
+      error: 'Payment completion failed',
+      details: error.response?.data || error.message
+    });
+  }
 });
 
-/**
- * Fonction pour vérifier l'état d'un paiement
- */
-export const getPaymentStatus = onCall(async (request) => {
-    const { paymentId } = request.data;
+// Health check
+export const healthCheck = functions.https.onRequest(async (req, res) => {
+  if (handleCors(req, res)) return;
 
-    if (!paymentId) {
-        throw new HttpsError('invalid-argument', 'Payment ID is required');
-    }
-
-    try {
-        const payment = await piNetworkRequest(`/payments/${paymentId}`);
-        return { payment };
-    } catch (error) {
-        throw new HttpsError('internal', `Failed to get payment status: ${error.message}`);
-    }
-});
-
-// Fonction de santé pour tester
-export const healthCheck = onCall(async (request) => {
-    return { 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        piConfig: {
-            appId: PI_APP_ID ? '✅ Défini' : '❌ Manquant',
-            secret: PI_APP_SECRET ? '✅ Défini' : '❌ Manquant'
-        }
-    };
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'Pi Network Payments'
+  });
 });
