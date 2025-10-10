@@ -1,26 +1,20 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import authReducer from "./slice/authSlice";
-import productReducer from "./slice/productSlice";
-import filterReducer from "./slice/filterSlice";
-import cartReducer from "./slice/cartSlice";
-import checkoutReducer from "./slice/checkoutSlice";
-import orderReducer from "./slice/orderSlice";
+// redux/store.js
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slice/authSlice';
+import orderReducer from './slice/orderSlice';
+import cartReducer from './slice/cartSlice';
+import productSlice from './slice/productSlice'; // Import correct
+import filterReducer from './slice/filterSlice'; // AJOUTEZ cette ligne
 
-const rootReducer = combineReducers({
-  auth: authReducer,
-  product: productReducer,
-  filter: filterReducer,
-  cart: cartReducer,
-  checkout: checkoutReducer,
-  orders: orderReducer,
-});
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    orders: orderReducer,
+    cart: cartReducer,
+    product: productSlice, // ⚠️ Doit être "product" et non "products"
+    filter: filterReducer, // AJOUTEZ cette ligne
 
-const store = configureStore({
-  reducer: rootReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
+  },
 });
 
 export default store;

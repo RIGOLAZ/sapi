@@ -24,55 +24,80 @@ export const usePiPayment = () => {
     }, []);
 
     // Gestion de l'approbation serveur
-    const handleServerApproval = useCallback(async (paymentId, paymentData) => {
-        try {
-            console.log('🔄 Appel fonction approvePiPayment avec:', { paymentId, paymentData });
-            
-            const approvePayment = httpsCallable(functions, 'approvePayment');
-            const result = await approvePayment({
-                paymentId: paymentId, // Assurez-vous que c'est bien envoyé
+    // Gestion de l'approbation serveur
+// Gestion de l'approbation serveur
+// Gestion de l'approbation serveur
+// Gestion de l'approbation serveur - VERSION HTTP
+// Gestion de l'approbation serveur - VERSION HTTP
+const handleServerApproval = useCallback(async (paymentId, paymentData) => {
+    try {
+        console.log('🔄 Appel fonction approvePayment (HTTP) avec:', { paymentId });
+        
+        const response = await fetch('https://us-central1-ecomm-f0ae6.cloudfunctions.net/approvePayment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                paymentId: paymentId,
                 paymentData: paymentData
-            });
-            
-            console.log("✅ Approbation Firebase reçue:", result.data);
-            
-        } catch (error) {
-            console.error("❌ Erreur lors de l'appel à la fonction d'approbation Firebase:", error);
-            setPaymentError(error.message);
-            
-            // Mettre à jour le statut de la commande en cas d'erreur
-            await updateOrderStatus(paymentData.metadata?.orderId, 'approval_failed', {
-                error: error.message
-            });
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Erreur approbation');
         }
-    }, [updateOrderStatus]);
+        
+        console.log("✅ Approbation reçue:", result);
+        
+    } catch (error) {
+        console.error("❌ Erreur approbation:", error);
+        setPaymentError(error.message);
+        
+        await updateOrderStatus(paymentData.metadata?.orderId, 'approval_failed', {
+            error: error.message
+        });
+    }
+}, [updateOrderStatus]);
 
-    // Gestion de la finalisation serveur
-    const handleServerCompletion = useCallback(async (paymentId, txid, paymentData) => {
-        try {
-            console.log('🔄 Appel fonction completePiPayment avec:', { paymentId, txid, paymentData });
-            
-            const completePayment = httpsCallable(functions, 'completePayment');
-            const result = await completePayment({
+// Gestion de la finalisation serveur - VERSION HTTP
+const handleServerCompletion = useCallback(async (paymentId, txid, paymentData) => {
+    try {
+        console.log('🔄 Appel fonction completePayment (HTTP) avec:', { paymentId, txid });
+        
+        const response = await fetch('https://us-central1-ecomm-f0ae6.cloudfunctions.net/completePayment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
                 paymentId: paymentId,
                 txid: txid,
                 paymentData: paymentData
-            });
-            
-            console.log("✅ Finalisation Firebase reçue:", result.data);
-            
-            // Mettre à jour l'état de la commande
-            await updateOrderStatus(paymentData.metadata?.orderId, 'completed', {
-                piPaymentId: paymentId,
-                piTransactionId: txid,
-                completedAt: new Date().toISOString()
-            });
-            
-        } catch (error) {
-            console.error("❌ Erreur lors de l'appel à la fonction de finalisation Firebase:", error);
-            setPaymentError(error.message);
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Erreur complétion');
         }
-    }, [updateOrderStatus]);
+        
+        console.log("✅ Finalisation reçue:", result);
+        
+        await updateOrderStatus(paymentData.metadata?.orderId, 'completed', {
+            piPaymentId: paymentId,
+            piTransactionId: txid,
+            completedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error("❌ Erreur finalisation:", error);
+        setPaymentError(error.message);
+    }
+}, [updateOrderStatus]);
 
     // Gestion annulation
     const handlePaymentCancel = useCallback((paymentId, paymentData) => {
