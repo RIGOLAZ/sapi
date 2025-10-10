@@ -13,6 +13,7 @@ const productSlice = createSlice({
   initialState,
   reducers: {
     STORE_PRODUCTS(state, action) {
+      //   console.log(action.payload);
       state.products = action.payload.products;
     },
     GET_PRICE_RANGE(state, action) {
@@ -33,7 +34,6 @@ const productSlice = createSlice({
 
 export const { STORE_PRODUCTS, GET_PRICE_RANGE } = productSlice.actions;
 
-// CORRECTION : Ajoutez l'export de selectProducts qui manque
 export const selectProducts = (state) => state.product.products;
 export const selectMinPrice = (state) => state.product.minPrice;
 export const selectMaxPrice = (state) => state.product.maxPrice;

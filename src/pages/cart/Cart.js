@@ -312,11 +312,6 @@ const Cart = () => {
       });
       // VIDER IMMÉDIATEMENT le panier
     dispatch(CLEAR_CART());
-
-    // 2. INCRÉMENTER les stats admin
-    dispatch(INCREMENT_ORDER_STATS({ 
-      amount: cartTotalAmount 
-    }));
       
       // Vider le panier après un délai
       setTimeout(() => {
@@ -324,7 +319,7 @@ const Cart = () => {
         setPaymentStatus('idle');
       }, 3000);
     }
-  }, [currentPayment, dispatch, cartTotalAmount]);
+  }, [currentPayment, dispatch]);
 
   // Calculer le sous-total et la quantité
   useEffect(() => {
