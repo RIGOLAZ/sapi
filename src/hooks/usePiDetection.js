@@ -1,3 +1,4 @@
+// hooks/usePiDetection.js - VERSION CORRIGÉE
 import { useState, useEffect } from 'react';
 
 export const usePiDetection = () => {
@@ -5,22 +6,40 @@ export const usePiDetection = () => {
   const [isPiLoaded, setIsPiLoaded] = useState(false);
 
   useEffect(() => {
-    const checkPiSDK = () => {
-      const piAvailable = typeof window.Pi !== 'undefined';
-      setIsPiLoaded(piAvailable);
-      setIsPiBrowser(piAvailable);
-      
-      if (piAvailable) {
-        console.log('✅ Pi SDK chargé:', window.Pi);
+    const checkPiEnvironment = () => {
+      // Vérification plus robuste du Pi Browser
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isPiBrowserDetected = 
+        userAgent.includes('pi browser') || 
+        userAgent.includes('minepi') ||
+        window.location.hostname.includes('minepi.com') ||
+        typeof window.Pi !== 'undefined';
+
+      setIsPiBrowser(isPiBrowserDetected);
+
+      // Vérification asynchrone du SDK
+      if (typeof window.Pi !== 'undefined') {
+        setIsPiLoaded(true);
       } else {
-        console.log('❌ Pi SDK non disponible');
-        
-        // Réessayer après 1 seconde
-        setTimeout(checkPiSDK, 1000);
+        // Attendre que le SDK se charge
+        const checkSDK = setInterval(() => {
+          if (typeof window.Pi !== 'undefined') {
+            setIsPiLoaded(true);
+            clearInterval(checkSDK);
+          }
+        }, 100);
+
+        // Timeout après 5 secondes
+        setTimeout(() => {
+          clearInterval(checkSDK);
+          if (typeof window.Pi === 'undefined') {
+            console.warn('SDK Pi non chargé après 5 secondes');
+          }
+        }, 5000);
       }
     };
 
-    checkPiSDK();
+    checkPiEnvironment();
   }, []);
 
   return { isPiBrowser, isPiLoaded };

@@ -32,77 +32,53 @@ import { Link } from "react-router-dom";
 import { usePiPayment } from "../../hooks/usePiPayment.js";
 import { usePiAuth } from "../../hooks/usePiAuth.js";
 
-// Composant de débogage Pi Browser - VERSION CORRIGÉE
+// Composant de debug amélioré pour Pi Browser
 const PiBrowserDebug = () => {
-  // Vérification DIRECTE et PRÉCISE
-  const sdkReallyLoaded = typeof window.Pi !== 'undefined';
-  const createPaymentAvailable = sdkReallyLoaded && typeof window.Pi.createPayment === 'function';
-  const authenticateAvailable = sdkReallyLoaded && typeof window.Pi.authenticate === 'function';
-  
-  const hostname = window.location.hostname;
-  const isProduction = hostname === 'sapi.etralis.com';
-  const isSandbox = hostname === 'localhost' || hostname.includes('sandbox.minepi.com');
-  
-  // Utilisation correcte des hooks
-  const { piUser, isAuthenticated } = usePiAuth();
-  const { isProcessing, paymentError, currentPayment } = usePiPayment();
+  const [sdkState, setSdkState] = useState({
+    loaded: false,
+    functions: {}
+  });
+
+  useEffect(() => {
+    const checkSDK = () => {
+      const sdk = window.Pi;
+      setSdkState({
+        loaded: !!sdk,
+        functions: {
+          createPayment: typeof sdk?.createPayment,
+          authenticate: typeof sdk?.authenticate,
+          user: sdk?.user ? 'present' : 'absent'
+        }
+      });
+    };
+
+    // Vérifier immédiatement
+    checkSDK();
+
+    // Vérifier périodiquement (important pour Pi Browser)
+    const interval = setInterval(checkSDK, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className={styles.debugPanel}>
-      <h4>🐛 Debug Pi Browser - VÉRIFICATION DIRECTE</h4>
+      <h4>🔍 Diagnostic Temps Réel Pi Browser</h4>
       <div className={styles.debugGrid}>
         <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>📍 Domaine:</span>
-          <span className={styles.debugValue}>{hostname}</span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🌍 Environnement:</span>
-          <span className={`${styles.debugValue} ${isProduction ? styles.prod : styles.sandbox}`}>
-            {isProduction ? 'PRODUCTION' : 'SANDBOX'}
+          <span>SDK Chargé:</span>
+          <span className={sdkState.loaded ? styles.success : styles.error}>
+            {sdkState.loaded ? '✅' : '❌'}
           </span>
         </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🔧 SDK Pi:</span>
-          <span className={sdkReallyLoaded ? styles.success : styles.error}>
-            {sdkReallyLoaded ? '✅ Chargé' : '❌ Non chargé'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>💳 createPayment:</span>
-          <span className={createPaymentAvailable ? styles.success : styles.error}>
-            {createPaymentAvailable ? '✅ Disponible' : '❌ Indisponible'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🔐 authenticate:</span>
-          <span className={authenticateAvailable ? styles.success : styles.error}>
-            {authenticateAvailable ? '✅ Disponible' : '❌ Indisponible'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🔐 Authentifié:</span>
-          <span className={isAuthenticated ? styles.success : styles.error}>
-            {isAuthenticated ? `✅ ${piUser?.username || 'Utilisateur Pi'}` : '❌ Non'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>💰 Paiement en cours:</span>
-          <span className={isProcessing ? styles.processing : styles.success}>
-            {isProcessing ? '🔄 Oui' : '✅ Non'}
-          </span>
-        </div>
+        {Object.entries(sdkState.functions).map(([key, value]) => (
+          <div key={key} className={styles.debugItem}>
+            <span>{key}:</span>
+            <span className={value ? styles.success : styles.error}>
+              {value ? '✅' : '❌'}
+            </span>
+          </div>
+        ))}
       </div>
-      
-      <div className={styles.debugInfo}>
-        <strong>🎯 État réel : {sdkReallyLoaded ? 'OPÉRATIONNEL' : 'NON CHARGÉ'}</strong>
-        <p>Le SDK Pi est {sdkReallyLoaded ? 'correctement chargé' : 'absent ou non chargé'}</p>
-      </div>
-
-      {paymentError && (
-        <div className={styles.debugWarning}>
-          ⚠️ <strong>Erreur de paiement:</strong> {paymentError}
-        </div>
-      )}
     </div>
   );
 };
@@ -201,97 +177,101 @@ const Cart = () => {
   };
 
   // Paiement Pi Network - VERSION AMÉLIORÉE
-  const handlePiPayment = async () => {
-    console.log('🎯 Début processus paiement - Diagnostic:');
-    console.log('- SDK Pi:', !!window.Pi);
-    console.log('- Authentifié:', isAuthenticated);
-    console.log('- Utilisateur:', piUser?.username);
-    console.log('- Pi Browser:', isPiBrowser);
+  // Dans votre Cart.js - PARTIE CRITIQUE CORRIGÉE
+const handlePiPayment = async () => {
+  console.log('🎯 Début processus paiement - Environnement:', piEnvironment);
+  
+  // VÉRIFICATION ROBUSTE DU SDK
+  const sdkAvailable = typeof window.Pi !== 'undefined';
+  const paymentAvailable = sdkAvailable && typeof window.Pi.createPayment === 'function';
+  
+  console.log('📋 État SDK:', { sdkAvailable, paymentAvailable, piEnvironment });
 
-    // Vérification améliorée de l'environnement
-    const sdkAvailable = typeof window.Pi !== 'undefined' && typeof window.Pi.createPayment === 'function';
-    
-    if (!sdkAvailable) {
-      toast.error("SDK Pi non disponible", {
+  if (!sdkAvailable) {
+    toast.error("🚫 SDK Pi non chargé. Ouvrez dans Pi Browser.", {
+      position: "bottom-right"
+    });
+    return;
+  }
+
+  if (!paymentAvailable) {
+    toast.error("❌ Fonction de paiement indisponible", {
+      position: "bottom-right"
+    });
+    return;
+  }
+
+  // Authentification d'abord
+  if (!isAuthenticated) {
+    try {
+      console.log('🔐 Authentification nécessaire...');
+      setPiLoading(true);
+      
+      await authenticatePi();
+      console.log('✅ Authentifié, re-vérification...');
+      
+      // Re-vérifier l'état après auth
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const realAuth = await checkRealAuthState();
+      
+      if (!realAuth) {
+        throw new Error('Échec de la vérification post-authentification');
+      }
+      
+      console.log('✅ Prêt pour paiement après auth');
+      return; // L'utilisateur devra recliquer sur payer
+      
+    } catch (error) {
+      console.error('❌ Erreur auth:', error);
+      toast.error(`🔐 Erreur authentification: ${error.message}`, {
         position: "bottom-right"
       });
       return;
-    }
-
-    if (!isAuthenticated) {
-      try {
-        console.log('🔐 Lancement authentification...');
-        setPiLoading(true);
-        await authenticatePi();
-        console.log('✅ Authentification réussie');
-        
-        // Synchronisation après auth
-        setTimeout(() => {
-          syncWithSDK?.();
-        }, 1000);
-        
-        return;
-      } catch (error) {
-        console.error('❌ Erreur authentification:', error);
-        toast.error("Échec de l'authentification Pi", {
-          position: "bottom-right"
-        });
-        return;
-      } finally {
-        setPiLoading(false);
-      }
-    }
-
-    setPiLoading(true);
-    setPaymentStatus('processing');
-
-    try {
-      const orderId = generateOrderId();
-      console.log('📦 Création commande:', orderId);
-      
-      const paymentData = {
-        amount: cartTotalAmount,
-        memo: `Commande SAPI - ${orderId}`,
-        metadata: {
-          orderId: orderId,
-          items: cartItems.map(item => ({
-            id: item.id,
-            name: item.name,
-            quantity: item.cartQuantity,
-            price: item.price
-          })),
-          totalAmount: cartTotalAmount,
-          totalQuantity: cartTotalQuantity,
-          timestamp: new Date().toISOString()
-        }
-      };
-
-      const orderData = {
-        orderId,
-        items: [...cartItems],
-        totalAmount: cartTotalAmount,
-        totalQuantity: cartTotalQuantity,
-        status: 'pending_payment',
-        paymentMethod: 'pi_network',
-        createdAt: new Date().toISOString(),
-        piUser: piUser?.username
-      };
-      
-      saveOrderToLocalStorage(orderData);
-      console.log('🚀 Appel à initiatePayment...');
-      await initiatePayment(paymentData);
-      console.log('✅ Paiement initié avec succès');
-      
-    } catch (error) {
-      console.error('❌ Erreur paiement Pi:', error);
-      setPaymentStatus('error');
-      toast.error(`Erreur paiement: ${error.message}`, {
-        position: "bottom-right"
-      });
     } finally {
       setPiLoading(false);
     }
-  };
+  }
+
+  // PROCÉDER AU PAIEMENT
+  setPiLoading(true);
+  setPaymentStatus('processing');
+
+  try {
+    const orderId = generateOrderId();
+    console.log('📦 Création commande pour paiement:', orderId);
+
+    const paymentData = {
+      amount: cartTotalAmount,
+      memo: `Commande SAPI - ${orderId}`,
+      metadata: {
+        orderId: orderId,
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.cartQuantity,
+          price: item.price
+        })),
+        totalAmount: cartTotalAmount,
+        totalQuantity: cartTotalQuantity,
+        timestamp: new Date().toISOString(),
+        environment: piEnvironment // Ajouter l'environnement
+      }
+    };
+
+    console.log('💰 Données paiement:', paymentData);
+    await initiatePayment(paymentData);
+    
+  } catch (error) {
+    console.error('💥 Erreur paiement:', error);
+    setPaymentStatus('error');
+    toast.error(`❌ Paiement échoué: ${error.message}`, {
+      position: "bottom-right",
+      autoClose: 5000
+    });
+  } finally {
+    setPiLoading(false);
+  }
+};
 
   // Gérer les erreurs de paiement
   useEffect(() => {
