@@ -65,7 +65,7 @@ const OrderDetails = () => {
                       </td>
                       <td>{price}</td>
                       <td>{cartQuantity}</td>
-                      <td>{(price * cartQuantity).toFixed(2)}</td>
+                      <td>{(price * cartQuantity).toFixed(5)}</td>
                       <td className={styles.icons}>
                         <Link to={`/review-product/${id}`}>
                           <button className="--btn --btn-primary">

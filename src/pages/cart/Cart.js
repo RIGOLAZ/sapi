@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { currency } from "..";
 import { usePiDetection } from '../../hooks/usePiDetection.js';
@@ -31,12 +32,10 @@ import {
 import { Link } from "react-router-dom";
 import { usePiPayment } from "../../hooks/usePiPayment.js";
 import { usePiAuth } from "../../hooks/usePiAuth.js";
-import { useNavigate} from 'react-router-dom';
 
-// Composant de débogage Pi Browser - VERSION CORRIGÉE
 const Cart = () => {
   const navigate = useNavigate();
-  const { isPiBrowser} = usePiDetection();
+  const { isPiBrowser } = usePiDetection();
   const cartItems = useSelector(selectCartItems);
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
@@ -45,7 +44,7 @@ const Cart = () => {
   const [piLoading, setPiLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('idle');
 
-  // Hooks Pi Network - VERSION CORRECTE
+  // Hooks Pi Network
   const { 
     initiatePayment, 
     isProcessing, 
@@ -61,6 +60,13 @@ const Cart = () => {
     syncWithSDK
   } = usePiAuth();
 
+  // Variables de debug (calculées à chaque rendu)
+  const sdkReallyLoaded = typeof window.Pi !== 'undefined';
+  const createPaymentAvailable = sdkReallyLoaded && typeof window.Pi.createPayment === 'function';
+  const authenticateAvailable = sdkReallyLoaded && typeof window.Pi.authenticate === 'function';
+  const hostname = window.location.hostname;
+  const isProduction = hostname === 'sapi.etralis.com';
+
   // Synchronisation automatique avec le SDK
   useEffect(() => {
     console.log('🔄 Cart - Synchronisation avec SDK Pi');
@@ -70,13 +76,13 @@ const Cart = () => {
   // Diagnostic amélioré
   useEffect(() => {
     console.log('🔍 DIAGNOSTIC CART COMPLET:');
-    console.log('- SDK Pi disponible:', typeof window.Pi !== 'undefined');
-    console.log('- createPayment disponible:', typeof window.Pi?.createPayment);
+    console.log('- SDK Pi disponible:', sdkReallyLoaded);
+    console.log('- createPayment disponible:', createPaymentAvailable);
     console.log('- Authentifié:', isAuthenticated);
     console.log('- Utilisateur:', piUser?.username);
     console.log('- Pi Browser détecté:', isPiBrowser);
     console.log('- Environnement Pi:', piEnvironment);
-  }, [isAuthenticated, piUser, isPiBrowser, piEnvironment]);
+  }, [isAuthenticated, piUser, isPiBrowser, piEnvironment, sdkReallyLoaded, createPaymentAvailable]);
 
   // Fonctions du panier
   const increaseCart = (cart) => {
@@ -127,21 +133,16 @@ const Cart = () => {
     }
   };
 
-  // Paiement Pi Network - VERSION AMÉLIORÉE
+  // Paiement Pi Network
   const handlePiPayment = async () => {
     console.log('🎯 Début processus paiement - Diagnostic:');
-    console.log('- SDK Pi:', !!window.Pi);
+    console.log('- SDK Pi:', sdkReallyLoaded);
     console.log('- Authentifié:', isAuthenticated);
     console.log('- Utilisateur:', piUser?.username);
     console.log('- Pi Browser:', isPiBrowser);
 
-    // Vérification améliorée de l'environnement
-    const sdkAvailable = typeof window.Pi !== 'undefined' && typeof window.Pi.createPayment === 'function';
-    
-    if (!sdkAvailable) {
-      toast.error("SDK Pi non disponible", {
-        position: "bottom-right"
-      });
+    if (!sdkReallyLoaded || !createPaymentAvailable) {
+      toast.error("SDK Pi non disponible", { position: "bottom-right" });
       return;
     }
 
@@ -152,17 +153,11 @@ const Cart = () => {
         await authenticatePi();
         console.log('✅ Authentification réussie');
         
-        // Synchronisation après auth
-        setTimeout(() => {
-          syncWithSDK?.();
-        }, 1000);
-        
+        setTimeout(() => syncWithSDK?.(), 1000);
         return;
       } catch (error) {
         console.error('❌ Erreur authentification:', error);
-        toast.error("Échec de l'authentification Pi", {
-          position: "bottom-right"
-        });
+        toast.error("Échec de l'authentification Pi", { position: "bottom-right" });
         return;
       } finally {
         setPiLoading(false);
@@ -212,9 +207,7 @@ const Cart = () => {
     } catch (error) {
       console.error('❌ Erreur paiement Pi:', error);
       setPaymentStatus('error');
-      toast.error(`Erreur paiement: ${error.message}`, {
-        position: "bottom-right"
-      });
+      toast.error(`Erreur paiement: ${error.message}`, { position: "bottom-right" });
     } finally {
       setPiLoading(false);
     }
@@ -222,33 +215,26 @@ const Cart = () => {
 
   // Gérer les erreurs de paiement
   useEffect(() => {
-    if (paymentError) {
-      setPaymentStatus('error');
-    }
+    if (paymentError) setPaymentStatus('error');
   }, [paymentError]);
 
   // Gérer les paiements réussis
- // Dans Cart.js - Ajoutez ce useEffect
-useEffect(() => {
-  if (currentPayment && currentPayment.status === 'completed') {
-    console.log('🎉 Paiement réussi détecté, vidage du panier...');
-    
-    // 1. Vider le panier
-    dispatch(CLEAR_CART());
-    
-    // 2. Mettre à jour les stats admin
-    dispatch(INCREMENT_ORDER_STATS({ amount: cartTotalAmount }));
-    
-    // 3. Rediriger vers la page de succès
-    const orderId = currentPayment.metadata?.orderId || generateOrderId();
-    navigate(`/checkout-success?order=${orderId}&amount=${cartTotalAmount}&txid=${currentPayment.txid}`);
-    
-    toast.success("🎉 Paiement réussi ! Redirection...", {
-      position: "bottom-right",
-      autoClose: 3000
-    });
-  }
-}, [currentPayment, dispatch, cartTotalAmount, navigate]);
+  useEffect(() => {
+    if (currentPayment && currentPayment.status === 'completed') {
+      console.log('🎉 Paiement réussi détecté, vidage du panier...');
+      
+      dispatch(CLEAR_CART());
+      dispatch(INCREMENT_ORDER_STATS({ amount: cartTotalAmount }));
+      
+      const orderId = currentPayment.metadata?.orderId || generateOrderId();
+      navigate(`/checkout-success?order=${orderId}&amount=${cartTotalAmount}&txid=${currentPayment.txid}`);
+      
+      toast.success("🎉 Paiement réussi ! Redirection...", {
+        position: "bottom-right",
+        autoClose: 3000
+      });
+    }
+  }, [currentPayment, dispatch, cartTotalAmount, navigate]);
 
   // Calculer le sous-total et la quantité
   useEffect(() => {
@@ -273,7 +259,6 @@ useEffect(() => {
             Découvrir les produits
           </Link>
 
-          {/* Section debug réduite et CORRECTE */}
           <div className={styles.miniDebug}>
             <div className={styles.debugStatus}>
               <span className={isPiBrowser ? styles.statusOk : styles.statusError}>
@@ -286,8 +271,8 @@ useEffect(() => {
               )}
             </div>
             <div className={styles.debugStatus}>
-              <span className={typeof window.Pi !== 'undefined' ? styles.statusOk : styles.statusError}>
-                SDK Pi: {typeof window.Pi !== 'undefined' ? '✅' : '❌'}
+              <span className={sdkReallyLoaded ? styles.statusOk : styles.statusError}>
+                SDK Pi: {sdkReallyLoaded ? '✅' : '❌'}
               </span>
             </div>
           </div>
@@ -295,99 +280,91 @@ useEffect(() => {
       </div>
     );
   }
-  const sdkReallyLoaded = typeof window.Pi !== 'undefined';
-  const createPaymentAvailable = sdkReallyLoaded && typeof window.Pi.createPayment === 'function';
-  const authenticateAvailable = sdkReallyLoaded && typeof window.Pi.authenticate === 'function';
-  
-  const hostname = window.location.hostname;
-  const isProduction = hostname === 'sapi.etralis.com';
-  // const isSandbox = hostname === 'localhost' || hostname.includes('sandbox.minepi.com');
-  
-  // Utilisation correcte des hooks
-  
+
   return (
     <div className={styles.cartContainer}>
-    <div className={styles.cartHeader}>
-      <div className={styles.headerContent}>
-        <h1 className={styles.title}>
-          <FaShoppingBag />
-          Panier d'achat
-        </h1>
-        <p className={styles.itemsCount}>
-          {cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''} dans votre panier
-        </p>
-      </div>
-      
-      <div className={styles.piStatus}>
-        <div className={`${styles.statusIndicator} ${isPiBrowser ? styles.connected : styles.disconnected}`}>
-          {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser requis'}
+      {/* En-tête */}
+      <div className={styles.cartHeader}>
+        <div className={styles.headerContent}>
+          <h1 className={styles.title}>
+            <FaShoppingBag />
+            Panier d'achat
+          </h1>
+          <p className={styles.itemsCount}>
+            {cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''} dans votre panier
+          </p>
         </div>
-        {isAuthenticated && (
-          <div className={styles.userInfo}>
-            <FaUserCheck />
-            <span>Connecté: {piUser?.username}</span>
+        
+        <div className={styles.piStatus}>
+          <div className={`${styles.statusIndicator} ${isPiBrowser ? styles.connected : styles.disconnected}`}>
+            {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser requis'}
+          </div>
+          {isAuthenticated && (
+            <div className={styles.userInfo}>
+              <FaUserCheck />
+              <span>Connecté: {piUser?.username}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Debug Panel intégré */}
+      <div className={styles.debugPanel}>
+        <h4>🐛 Debug Pi Browser - VÉRIFICATION DIRECTE</h4>
+        <div className={styles.debugGrid}>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>📍 Domaine:</span>
+            <span className={styles.debugValue}>{hostname}</span>
+          </div>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>🌍 Environnement:</span>
+            <span className={`${styles.debugValue} ${isProduction ? styles.prod : styles.sandbox}`}>
+              {isProduction ? 'PRODUCTION' : 'SANDBOX'}
+            </span>
+          </div>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>🔧 SDK Pi:</span>
+            <span className={sdkReallyLoaded ? styles.success : styles.error}>
+              {sdkReallyLoaded ? '✅ Chargé' : '❌ Non chargé'}
+            </span>
+          </div>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>💳 createPayment:</span>
+            <span className={createPaymentAvailable ? styles.success : styles.error}>
+              {createPaymentAvailable ? '✅ Disponible' : '❌ Indisponible'}
+            </span>
+          </div>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>🔐 authenticate:</span>
+            <span className={authenticateAvailable ? styles.success : styles.error}>
+              {authenticateAvailable ? '✅ Disponible' : '❌ Indisponible'}
+            </span>
+          </div>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>🔐 Authentifié:</span>
+            <span className={isAuthenticated ? styles.success : styles.error}>
+              {isAuthenticated ? `✅ ${piUser?.username || 'Utilisateur Pi'}` : '❌ Non'}
+            </span>
+          </div>
+          <div className={styles.debugItem}>
+            <span className={styles.debugLabel}>💰 Paiement en cours:</span>
+            <span className={isProcessing ? styles.processing : styles.success}>
+              {isProcessing ? '🔄 Oui' : '✅ Non'}
+            </span>
+          </div>
+        </div>
+        
+        <div className={styles.debugInfo}>
+          <strong>🎯 État réel : {sdkReallyLoaded ? 'OPÉRATIONNEL' : 'NON CHARGÉ'}</strong>
+          <p>Le SDK Pi est {sdkReallyLoaded ? 'correctement chargé' : 'absent ou non chargé'}</p>
+        </div>
+
+        {paymentError && (
+          <div className={styles.debugWarning}>
+            ⚠️ <strong>Erreur de paiement:</strong> {paymentError}
           </div>
         )}
       </div>
-    </div>
-       <div className={styles.debugPanel}>
-      <h4>🐛 Debug Pi Browser - VÉRIFICATION DIRECTE</h4>
-      <div className={styles.debugGrid}>
-         <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>📍 Domaine:</span>
-          <span className={styles.debugValue}>{hostname}</span>
-          </div>
-          <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🌍 Environnement:</span>
-          <span className={`${styles.debugValue} ${isProduction ? styles.prod : styles.sandbox}`}>
-          {isProduction ? 'PRODUCTION' : 'SANDBOX'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🔧 SDK Pi:</span>
-          <span className={sdkReallyLoaded ? styles.success : styles.error}>
-            {sdkReallyLoaded ? '✅ Chargé' : '❌ Non chargé'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>💳 createPayment:</span>
-          <span className={createPaymentAvailable ? styles.success : styles.error}>
-            {createPaymentAvailable ? '✅ Disponible' : '❌ Indisponible'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🔐 authenticate:</span>
-          <span className={authenticateAvailable ? styles.success : styles.error}>
-            {authenticateAvailable ? '✅ Disponible' : '❌ Indisponible'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>🔐 Authentifié:</span>
-          <span className={isAuthenticated ? styles.success : styles.error}>
-            {isAuthenticated ? `✅ ${piUser?.username || 'Utilisateur Pi'}` : '❌ Non'}
-          </span>
-        </div>
-        <div className={styles.debugItem}>
-          <span className={styles.debugLabel}>💰 Paiement en cours:</span>
-          <span className={isProcessing ? styles.processing : styles.success}>
-            {isProcessing ? '🔄 Oui' : '✅ Non'}
-          </span>
-        </div>
-      </div>
-      <div className={styles.debugInfo}>
-        <strong>🎯 État réel : {sdkReallyLoaded ? 'OPÉRATIONNEL' : 'NON CHARGÉ'}</strong>
-        <p>Le SDK Pi est {sdkReallyLoaded ? 'correctement chargé' : 'absent ou non chargé'}</p>
-      </div>
-
-      {paymentError && (
-        <div className={styles.debugWarning}>
-          ⚠️ <strong>Erreur de paiement:</strong> {paymentError}
-        </div>
-      )}
-    </div>
-      {/* En-tête */}
-
-      {/* Debug Panel - MAINTENANT PRÉCIS */}
 
       {/* Contenu principal */}
       <div className={styles.cartContent}>
@@ -438,7 +415,7 @@ useEffect(() => {
                 </div>
 
                 <div className={styles.itemTotal}>
-                  {currency} {(item.price * item.cartQuantity).toFixed(2)}
+                  {currency} {(item.price * item.cartQuantity).toFixed(5)}
                 </div>
 
                 <button
@@ -461,7 +438,7 @@ useEffect(() => {
             <div className={styles.summaryDetails}>
               <div className={styles.summaryRow}>
                 <span>Sous-total ({cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''})</span>
-                <span>{currency} {cartTotalAmount.toFixed(2)}</span>
+                <span>{currency} {cartTotalAmount.toFixed(5)}</span>
               </div>
               
               <div className={styles.summaryRow}>
@@ -472,12 +449,12 @@ useEffect(() => {
               <div className={styles.summaryTotal}>
                 <span>Total à payer</span>
                 <span className={styles.totalAmount}>
-                  {currency} {cartTotalAmount.toFixed(2)}
+                  {currency} {cartTotalAmount.toFixed(5)}
                 </span>
               </div>
             </div>
 
-            {/* Bouton paiement Pi - CONDITION AMÉLIORÉE */}
+            {/* Bouton paiement Pi */}
             <button
               className={`${styles.checkoutButton} ${
                 piLoading || isProcessing ? styles.disabled : ''
@@ -510,7 +487,7 @@ useEffect(() => {
               ) : (
                 <>
                   <FaLock />
-                  Payer {cartTotalAmount.toFixed(2)} π
+                  Payer {cartTotalAmount.toFixed(5)} π
                 </>
               )}
             </button>

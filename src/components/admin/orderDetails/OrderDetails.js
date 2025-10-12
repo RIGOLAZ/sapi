@@ -76,7 +76,7 @@ const OrderDetails = () => {
                       </td>
                       <td>{price}</td>
                       <td>{cartQuantity}</td>
-                      <td>{(price * cartQuantity).toFixed(2)}</td>
+                      <td>{(price * cartQuantity).toFixed(5)}</td>
                     </tr>
                   );
                 })}

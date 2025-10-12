@@ -18,7 +18,7 @@ const orderSlice = createSlice({
     const str = (o.orderAmount || '0').toString().replace(/[^\d.]/g, '');
     return sum + (Number(str) || 0);
   }, 0);
-  state.totalOrderAmount = Number(rawTotal.toFixed(2));
+  state.totalOrderAmount = Number(rawTotal.toFixed(5));
     },
   },
 });

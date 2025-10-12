@@ -790,7 +790,7 @@ const handlePiPayment = async () => {
                 </div>
 
                 <div className={styles.itemTotal}>
-                  {currency} {(item.price * item.cartQuantity).toFixed(2)}
+                  {currency} {(item.price * item.cartQuantity).toFixed(5)}
                 </div>
 
                 <button
@@ -813,7 +813,7 @@ const handlePiPayment = async () => {
             <div className={styles.summaryDetails}>
               <div className={styles.summaryRow}>
                 <span>Sous-total ({cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''})</span>
-                <span>{currency} {cartTotalAmount.toFixed(2)}</span>
+                <span>{currency} {cartTotalAmount.toFixed(5)}</span>
               </div>
               
               <div className={styles.summaryRow}>
@@ -824,7 +824,7 @@ const handlePiPayment = async () => {
               <div className={styles.summaryTotal}>
                 <span>Total à payer</span>
                 <span className={styles.totalAmount}>
-                  {currency} {cartTotalAmount.toFixed(2)}
+                  {currency} {cartTotalAmount.toFixed(5)}
                 </span>
               </div>
             </div>
@@ -866,7 +866,7 @@ const handlePiPayment = async () => {
               ) : (
                 <>
                   <FaLock />
-                  Payer {cartTotalAmount.toFixed(2)} π
+                  Payer {cartTotalAmount.toFixed(5)} π
                 </>
               )}
             </button>
