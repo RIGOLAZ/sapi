@@ -31,60 +31,12 @@ import {
 import { Link } from "react-router-dom";
 import { usePiPayment } from "../../hooks/usePiPayment.js";
 import { usePiAuth } from "../../hooks/usePiAuth.js";
+import { useNavigate} from 'react-router-dom';
 
-// Composant de debug amélioré pour Pi Browser
-const PiBrowserDebug = () => {
-  const [sdkState, setSdkState] = useState({
-    loaded: false,
-    functions: {}
-  });
-
-  useEffect(() => {
-    const checkSDK = () => {
-      const sdk = window.Pi;
-      setSdkState({
-        loaded: !!sdk,
-        functions: {
-          createPayment: typeof sdk?.createPayment,
-          authenticate: typeof sdk?.authenticate,
-          user: sdk?.user ? 'present' : 'absent'
-        }
-      });
-    };
-
-    // Vérifier immédiatement
-    checkSDK();
-
-    // Vérifier périodiquement (important pour Pi Browser)
-    const interval = setInterval(checkSDK, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className={styles.debugPanel}>
-      <h4>🔍 Diagnostic Temps Réel Pi Browser</h4>
-      <div className={styles.debugGrid}>
-        <div className={styles.debugItem}>
-          <span>SDK Chargé:</span>
-          <span className={sdkState.loaded ? styles.success : styles.error}>
-            {sdkState.loaded ? '✅' : '❌'}
-          </span>
-        </div>
-        {Object.entries(sdkState.functions).map(([key, value]) => (
-          <div key={key} className={styles.debugItem}>
-            <span>{key}:</span>
-            <span className={value ? styles.success : styles.error}>
-              {value ? '✅' : '❌'}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
+// Composant de débogage Pi Browser - VERSION CORRIGÉE
 const Cart = () => {
-  const { isPiBrowser, isPiLoaded } = usePiDetection();
+  const navigate = useNavigate();
+  const { isPiBrowser} = usePiDetection();
   const cartItems = useSelector(selectCartItems);
   const cartTotalAmount = useSelector(selectCartTotalAmount);
   const cartTotalQuantity = useSelector(selectCartTotalQuantity);
@@ -106,7 +58,6 @@ const Cart = () => {
     piUser,
     isAuthenticated,
     authenticatePi,
-    checkRealAuthState,
     syncWithSDK
   } = usePiAuth();
 
@@ -177,101 +128,97 @@ const Cart = () => {
   };
 
   // Paiement Pi Network - VERSION AMÉLIORÉE
-  // Dans votre Cart.js - PARTIE CRITIQUE CORRIGÉE
-const handlePiPayment = async () => {
-  console.log('🎯 Début processus paiement - Environnement:', piEnvironment);
-  
-  // VÉRIFICATION ROBUSTE DU SDK
-  const sdkAvailable = typeof window.Pi !== 'undefined';
-  const paymentAvailable = sdkAvailable && typeof window.Pi.createPayment === 'function';
-  
-  console.log('📋 État SDK:', { sdkAvailable, paymentAvailable, piEnvironment });
+  const handlePiPayment = async () => {
+    console.log('🎯 Début processus paiement - Diagnostic:');
+    console.log('- SDK Pi:', !!window.Pi);
+    console.log('- Authentifié:', isAuthenticated);
+    console.log('- Utilisateur:', piUser?.username);
+    console.log('- Pi Browser:', isPiBrowser);
 
-  if (!sdkAvailable) {
-    toast.error("🚫 SDK Pi non chargé. Ouvrez dans Pi Browser.", {
-      position: "bottom-right"
-    });
-    return;
-  }
-
-  if (!paymentAvailable) {
-    toast.error("❌ Fonction de paiement indisponible", {
-      position: "bottom-right"
-    });
-    return;
-  }
-
-  // Authentification d'abord
-  if (!isAuthenticated) {
-    try {
-      console.log('🔐 Authentification nécessaire...');
-      setPiLoading(true);
-      
-      await authenticatePi();
-      console.log('✅ Authentifié, re-vérification...');
-      
-      // Re-vérifier l'état après auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const realAuth = await checkRealAuthState();
-      
-      if (!realAuth) {
-        throw new Error('Échec de la vérification post-authentification');
-      }
-      
-      console.log('✅ Prêt pour paiement après auth');
-      return; // L'utilisateur devra recliquer sur payer
-      
-    } catch (error) {
-      console.error('❌ Erreur auth:', error);
-      toast.error(`🔐 Erreur authentification: ${error.message}`, {
+    // Vérification améliorée de l'environnement
+    const sdkAvailable = typeof window.Pi !== 'undefined' && typeof window.Pi.createPayment === 'function';
+    
+    if (!sdkAvailable) {
+      toast.error("SDK Pi non disponible", {
         position: "bottom-right"
       });
       return;
+    }
+
+    if (!isAuthenticated) {
+      try {
+        console.log('🔐 Lancement authentification...');
+        setPiLoading(true);
+        await authenticatePi();
+        console.log('✅ Authentification réussie');
+        
+        // Synchronisation après auth
+        setTimeout(() => {
+          syncWithSDK?.();
+        }, 1000);
+        
+        return;
+      } catch (error) {
+        console.error('❌ Erreur authentification:', error);
+        toast.error("Échec de l'authentification Pi", {
+          position: "bottom-right"
+        });
+        return;
+      } finally {
+        setPiLoading(false);
+      }
+    }
+
+    setPiLoading(true);
+    setPaymentStatus('processing');
+
+    try {
+      const orderId = generateOrderId();
+      console.log('📦 Création commande:', orderId);
+      
+      const paymentData = {
+        amount: cartTotalAmount,
+        memo: `Commande SAPI - ${orderId}`,
+        metadata: {
+          orderId: orderId,
+          items: cartItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.cartQuantity,
+            price: item.price
+          })),
+          totalAmount: cartTotalAmount,
+          totalQuantity: cartTotalQuantity,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      const orderData = {
+        orderId,
+        items: [...cartItems],
+        totalAmount: cartTotalAmount,
+        totalQuantity: cartTotalQuantity,
+        status: 'pending_payment',
+        paymentMethod: 'pi_network',
+        createdAt: new Date().toISOString(),
+        piUser: piUser?.username
+      };
+      
+      saveOrderToLocalStorage(orderData);
+      console.log('🚀 Appel à initiatePayment...');
+      await initiatePayment(paymentData);
+      console.log('✅ Paiement initié avec succès');
+      
+    } catch (error) {
+      console.error('❌ Erreur paiement Pi:', error);
+      setPaymentStatus('error');
+      toast.error(`Erreur paiement: ${error.message}`, {
+        position: "bottom-right"
+      });
     } finally {
       setPiLoading(false);
     }
-  }
-
-  // PROCÉDER AU PAIEMENT
-  setPiLoading(true);
-  setPaymentStatus('processing');
-
-  try {
-    const orderId = generateOrderId();
-    console.log('📦 Création commande pour paiement:', orderId);
-
-    const paymentData = {
-      amount: cartTotalAmount,
-      memo: `Commande SAPI - ${orderId}`,
-      metadata: {
-        orderId: orderId,
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.cartQuantity,
-          price: item.price
-        })),
-        totalAmount: cartTotalAmount,
-        totalQuantity: cartTotalQuantity,
-        timestamp: new Date().toISOString(),
-        environment: piEnvironment // Ajouter l'environnement
-      }
-    };
-
-    console.log('💰 Données paiement:', paymentData);
-    await initiatePayment(paymentData);
-    
-  } catch (error) {
-    console.error('💥 Erreur paiement:', error);
-    setPaymentStatus('error');
-    toast.error(`❌ Paiement échoué: ${error.message}`, {
-      position: "bottom-right",
-      autoClose: 5000
-    });
-  } finally {
-    setPiLoading(false);
-  }
-};
+  };
 
   // Gérer les erreurs de paiement
   useEffect(() => {
@@ -281,25 +228,27 @@ const handlePiPayment = async () => {
   }, [paymentError]);
 
   // Gérer les paiements réussis
-  useEffect(() => {
-    if (currentPayment && currentPayment.status === 'completed') {
-      console.log('🎉 Paiement réussi détecté, vidage du panier...');
-
-      setPaymentStatus('success');
-      toast.success("🎉 Paiement réussi ! Votre commande est confirmée.", {
-        position: "bottom-right",
-        autoClose: 5000
-      });
-      // VIDER IMMÉDIATEMENT le panier
+ // Dans Cart.js - Ajoutez ce useEffect
+useEffect(() => {
+  if (currentPayment && currentPayment.status === 'completed') {
+    console.log('🎉 Paiement réussi détecté, vidage du panier...');
+    
+    // 1. Vider le panier
     dispatch(CLEAR_CART());
-      
-      // Vider le panier après un délai
-      setTimeout(() => {
-        dispatch(CLEAR_CART());
-        setPaymentStatus('idle');
-      }, 3000);
-    }
-  }, [currentPayment, dispatch]);
+    
+    // 2. Mettre à jour les stats admin
+    dispatch(INCREMENT_ORDER_STATS({ amount: cartTotalAmount }));
+    
+    // 3. Rediriger vers la page de succès
+    const orderId = currentPayment.metadata?.orderId || generateOrderId();
+    navigate(`/checkout-success?order=${orderId}&amount=${cartTotalAmount}&txid=${currentPayment.txid}`);
+    
+    toast.success("🎉 Paiement réussi ! Redirection...", {
+      position: "bottom-right",
+      autoClose: 3000
+    });
+  }
+}, [currentPayment, dispatch, cartTotalAmount, navigate]);
 
   // Calculer le sous-total et la quantité
   useEffect(() => {
@@ -346,36 +295,99 @@ const handlePiPayment = async () => {
       </div>
     );
   }
-
+  const sdkReallyLoaded = typeof window.Pi !== 'undefined';
+  const createPaymentAvailable = sdkReallyLoaded && typeof window.Pi.createPayment === 'function';
+  const authenticateAvailable = sdkReallyLoaded && typeof window.Pi.authenticate === 'function';
+  
+  const hostname = window.location.hostname;
+  const isProduction = hostname === 'sapi.etralis.com';
+  // const isSandbox = hostname === 'localhost' || hostname.includes('sandbox.minepi.com');
+  
+  // Utilisation correcte des hooks
+  
   return (
     <div className={styles.cartContainer}>
-      {/* En-tête */}
-      <div className={styles.cartHeader}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.title}>
-            <FaShoppingBag />
-            Panier d'achat
-          </h1>
-          <p className={styles.itemsCount}>
-            {cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''} dans votre panier
-          </p>
+    <div className={styles.cartHeader}>
+      <div className={styles.headerContent}>
+        <h1 className={styles.title}>
+          <FaShoppingBag />
+          Panier d'achat
+        </h1>
+        <p className={styles.itemsCount}>
+          {cartTotalQuantity} article{cartTotalQuantity > 1 ? 's' : ''} dans votre panier
+        </p>
+      </div>
+      
+      <div className={styles.piStatus}>
+        <div className={`${styles.statusIndicator} ${isPiBrowser ? styles.connected : styles.disconnected}`}>
+          {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser requis'}
         </div>
-        
-        <div className={styles.piStatus}>
-          <div className={`${styles.statusIndicator} ${isPiBrowser ? styles.connected : styles.disconnected}`}>
-            {isPiBrowser ? '✅ Pi Browser' : '❌ Pi Browser requis'}
+        {isAuthenticated && (
+          <div className={styles.userInfo}>
+            <FaUserCheck />
+            <span>Connecté: {piUser?.username}</span>
           </div>
-          {isAuthenticated && (
-            <div className={styles.userInfo}>
-              <FaUserCheck />
-              <span>Connecté: {piUser?.username}</span>
-            </div>
-          )}
+        )}
+      </div>
+    </div>
+       <div className={styles.debugPanel}>
+      <h4>🐛 Debug Pi Browser - VÉRIFICATION DIRECTE</h4>
+      <div className={styles.debugGrid}>
+         <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>📍 Domaine:</span>
+          <span className={styles.debugValue}>{hostname}</span>
+          </div>
+          <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🌍 Environnement:</span>
+          <span className={`${styles.debugValue} ${isProduction ? styles.prod : styles.sandbox}`}>
+          {isProduction ? 'PRODUCTION' : 'SANDBOX'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🔧 SDK Pi:</span>
+          <span className={sdkReallyLoaded ? styles.success : styles.error}>
+            {sdkReallyLoaded ? '✅ Chargé' : '❌ Non chargé'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>💳 createPayment:</span>
+          <span className={createPaymentAvailable ? styles.success : styles.error}>
+            {createPaymentAvailable ? '✅ Disponible' : '❌ Indisponible'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🔐 authenticate:</span>
+          <span className={authenticateAvailable ? styles.success : styles.error}>
+            {authenticateAvailable ? '✅ Disponible' : '❌ Indisponible'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🔐 Authentifié:</span>
+          <span className={isAuthenticated ? styles.success : styles.error}>
+            {isAuthenticated ? `✅ ${piUser?.username || 'Utilisateur Pi'}` : '❌ Non'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>💰 Paiement en cours:</span>
+          <span className={isProcessing ? styles.processing : styles.success}>
+            {isProcessing ? '🔄 Oui' : '✅ Non'}
+          </span>
         </div>
       </div>
+      <div className={styles.debugInfo}>
+        <strong>🎯 État réel : {sdkReallyLoaded ? 'OPÉRATIONNEL' : 'NON CHARGÉ'}</strong>
+        <p>Le SDK Pi est {sdkReallyLoaded ? 'correctement chargé' : 'absent ou non chargé'}</p>
+      </div>
+
+      {paymentError && (
+        <div className={styles.debugWarning}>
+          ⚠️ <strong>Erreur de paiement:</strong> {paymentError}
+        </div>
+      )}
+    </div>
+      {/* En-tête */}
 
       {/* Debug Panel - MAINTENANT PRÉCIS */}
-      {process.env.NODE_ENV === 'development' && <PiBrowserDebug />}
 
       {/* Contenu principal */}
       <div className={styles.cartContent}>

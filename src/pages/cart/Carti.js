@@ -49,15 +49,19 @@ const FIREBASE_PROJECT_ID = 'sapi-460615d940fecab6'; // Votre slug Pi App
 
 // Composant de débogage Pi Browser
 const PiBrowserDebug = () => {
-  // Vérification DIRECTE du SDK, pas via le hook
+  // Vérification DIRECTE et PRÉCISE
   const sdkReallyLoaded = typeof window.Pi !== 'undefined';
   const createPaymentAvailable = sdkReallyLoaded && typeof window.Pi.createPayment === 'function';
   const authenticateAvailable = sdkReallyLoaded && typeof window.Pi.authenticate === 'function';
   
-  // Vérification de l'environnement
   const hostname = window.location.hostname;
   const isProduction = hostname === 'sapi.etralis.com';
+  const isSandbox = hostname === 'localhost' || hostname.includes('sandbox.minepi.com');
   
+  // Utilisation correcte des hooks
+  const { piUser, isAuthenticated } = usePiAuth();
+  const { isProcessing, paymentError, currentPayment } = usePiPayment();
+
   return (
     <div className={styles.debugPanel}>
       <h4>🐛 Debug Pi Browser - VÉRIFICATION DIRECTE</h4>
@@ -90,16 +94,33 @@ const PiBrowserDebug = () => {
             {authenticateAvailable ? '✅ Disponible' : '❌ Indisponible'}
           </span>
         </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>🔐 Authentifié:</span>
+          <span className={isAuthenticated ? styles.success : styles.error}>
+            {isAuthenticated ? `✅ ${piUser?.username || 'Utilisateur Pi'}` : '❌ Non'}
+          </span>
+        </div>
+        <div className={styles.debugItem}>
+          <span className={styles.debugLabel}>💰 Paiement en cours:</span>
+          <span className={isProcessing ? styles.processing : styles.success}>
+            {isProcessing ? '🔄 Oui' : '✅ Non'}
+          </span>
+        </div>
       </div>
       
       <div className={styles.debugInfo}>
-        <strong>🎯 État réel : OPÉRATIONNEL</strong>
-        <p>Le SDK Pi est correctement chargé et fonctionnel sur localhost</p>
+        <strong>🎯 État réel : {sdkReallyLoaded ? 'OPÉRATIONNEL' : 'NON CHARGÉ'}</strong>
+        <p>Le SDK Pi est {sdkReallyLoaded ? 'correctement chargé' : 'absent ou non chargé'}</p>
       </div>
+
+      {paymentError && (
+        <div className={styles.debugWarning}>
+          ⚠️ <strong>Erreur de paiement:</strong> {paymentError}
+        </div>
+      )}
     </div>
   );
 };
-
 const Cart = () => {
 const { 
     initiatePayment, 

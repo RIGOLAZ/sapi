@@ -23,6 +23,22 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* src/components/Cart.css */
+/* Dans Cart.module.css */
+.debugWarning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 10px;
+  color: #856404;
+}
+
+.debugGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
 .cart-container {
   max-width: 1200px;
   margin: 0 auto;
