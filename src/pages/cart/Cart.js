@@ -60,6 +60,112 @@ const Cart = () => {
     syncWithSDK
   } = usePiAuth();
 
+  // Nouvel état pour gérer l'annulation
+  const [cancellingPayment, setCancellingPayment] = useState(false);
+  const [pendingPaymentId, setPendingPaymentId] = useState(null);
+
+  // Fonction pour détecter les paiements en attente
+  useEffect(() => {
+    const checkPendingPayments = async () => {
+      try {
+        // Vérifier s'il y a des paiements en attente dans le localStorage
+        const orders = JSON.parse(localStorage.getItem('sapi_orders') || '[]');
+        const pendingOrder = orders.find(order => 
+          order.status === 'pending_payment' && order.piPaymentId
+        );
+        
+        if (pendingOrder && pendingOrder.piPaymentId) {
+          setPendingPaymentId(pendingOrder.piPaymentId);
+          console.log('⚠️ Paiement en attente détecté:', pendingOrder.piPaymentId);
+        }
+      } catch (error) {
+        console.error('Erreur vérification paiements en attente:', error);
+      }
+    };
+
+    checkPendingPayments();
+  }, []);
+
+  // Fonction pour annuler un paiement bloqué
+  const handleCancelPendingPayment = async () => {
+    if (!pendingPaymentId) return;
+
+    setCancellingPayment(true);
+    
+    try {
+      console.log('🔄 Annulation du paiement bloqué:', pendingPaymentId);
+      
+      const response = await fetch('https://us-central1-ecomm-f0ae6.cloudfunctions.net/cancelPayment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentId: pendingPaymentId,
+          reason: 'user_manual_cancellation'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Paiement annulé avec succès');
+        
+        // Nettoyer le localStorage
+        const orders = JSON.parse(localStorage.getItem('sapi_orders') || '[]');
+        const updatedOrders = orders.map(order => 
+          order.piPaymentId === pendingPaymentId 
+            ? { ...order, status: 'cancelled', cancelledAt: new Date().toISOString() }
+            : order
+        );
+        localStorage.setItem('sapi_orders', JSON.stringify(updatedOrders));
+        
+        setPendingPaymentId(null);
+        toast.success('Paiement précédent annulé. Vous pouvez réessayer.', {
+          position: "bottom-right",
+          autoClose: 5000
+        });
+      } else {
+        throw new Error(result.error || 'Échec de l\'annulation');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'annulation:', error);
+      toast.error(`Erreur d'annulation: ${error.message}`, {
+        position: "bottom-right",
+        autoClose: 5000
+      });
+    } finally {
+      setCancellingPayment(false);
+    }
+  };
+
+  // Fonction pour récupérer les paiements bloqués automatiquement
+  const recoverStuckPayments = async () => {
+    try {
+      const orders = JSON.parse(localStorage.getItem('sapi_orders') || '[]');
+      const stuckOrders = orders.filter(order => 
+        order.status === 'pending_payment' && 
+        order.createdAt && 
+        (Date.now() - new Date(order.createdAt).getTime()) > 300000 // 5 minutes
+      );
+
+      for (const order of stuckOrders) {
+        if (order.piPaymentId) {
+          console.log('🔄 Récupération automatique paiement bloqué:', order.piPaymentId);
+          await handleCancelPendingPayment(order.piPaymentId);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur récupération automatique:', error);
+    }
+  };
+
+  // Exécuter la récupération au chargement
+  useEffect(() => {
+    recoverStuckPayments();
+  }, []);
+
   // Variables de debug (calculées à chaque rendu)
   const sdkReallyLoaded = typeof window.Pi !== 'undefined';
   const createPaymentAvailable = sdkReallyLoaded && typeof window.Pi.createPayment === 'function';
@@ -491,7 +597,36 @@ const Cart = () => {
                 </>
               )}
             </button>
-
+            {/* Bannière d'alerte pour paiement bloqué */}
+            {pendingPaymentId && (
+              <div className={styles.pendingPaymentAlert}>
+                <div className={styles.alertContent}>
+                  <FaExclamationTriangle />
+                  <div className={styles.alertText}>
+                    <strong>Paiement en attente détecté</strong>
+                    <p>Un paiement précédent est bloqué. Annulez-le pour pouvoir effectuer un nouvel achat.</p>
+                    <small>ID: {pendingPaymentId.substring(0, 15)}...</small>
+                  </div>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={handleCancelPendingPayment}
+                    disabled={cancellingPayment}
+                  >
+                    {cancellingPayment ? (
+                      <>
+                        <span className={styles.spinner}></span>
+                        Annulation...
+                      </>
+                    ) : (
+                      <>
+                        <FaTimes />
+                        Annuler le paiement bloqué
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
             {/* Messages informatifs */}
             <div className={styles.infoMessages}>
               {!isPiBrowser && (
